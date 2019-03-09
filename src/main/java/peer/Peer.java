@@ -38,11 +38,11 @@ public class Peer {
     /*
         usage:
         protocol version,the server id, service access point, MC, MDB, MDR
-        rmi init example:
+        rmi init example:TODO
         1.0, 0, 192.168.0.1, 224.0.0.0:8000, 224.0.0.0:8001, 224.0.0.0:8002
 
         normal peer example:
-        1.0, 1, 224.0.0.0 8000 224.0.0.0 8001 224.0.0.0 8002
+        java peer.Peer 1.0 1 224.0.0.0:8000 224.0.0.0:8001 224.0.0.0:8002
     */
     public static void main(String[] args) throws IOException {
 
@@ -83,6 +83,8 @@ public class Peer {
         System.out.println("Start Listening on MDR Channel...");
         new Thread(MDRChannel).start();
 
+        return;
+
 
 
 
@@ -121,7 +123,7 @@ public class Peer {
 
         } else if (args.length == 5) {//normal peer
 
-            protocolVersion = Integer.parseInt(args[0]);
+            protocolVersion = Float.parseFloat(args[0]);
             ID = Integer.parseInt(args[1]);
 
             try {
@@ -144,9 +146,10 @@ public class Peer {
 
 
         }
+        else return false;
 
 
-        return false;
+        return true;
     }
 
     private static void launchRMI() {
