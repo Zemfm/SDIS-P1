@@ -49,14 +49,16 @@ public class Peer {
 
 
         //this line is used in macOS
+        //-Djava.net.preferIPv4Stack=true works better
         System.setProperty("java.net.preferIPv4Stack", "true");
-
-
-
 
 
         if(!parseArgs(args)) {
             System.out.println("Bad arguments");
+            System.out.println("USAGE (RMI): java peer.Peer <protocol_version> <service_access_point> <MCADDR>:<MCPORT> " +
+                    "<MDBADDR>:<MDBPORT> <MDRADDR>:<MDRPORT>");
+            System.out.println("USAGE (NON-RMI): java peer.Peer <protocol_version> <MCADDR>:<MCPORT> " +
+                    "<MDBADDR>:<MDBPORT> <MDRADDR>:<MDRPORT>");
             return;
         }
 
@@ -97,7 +99,7 @@ public class Peer {
         //args == 6 -> INITIALIZE RMI
         if(args.length == 6) {
 
-            protocolVersion = Integer.parseInt(args[0]);
+            protocolVersion = Float.parseFloat(args[0]);
             ID = Integer.parseInt(args[1]);
             rmiRemoteObject = args[2];
             try {
