@@ -61,7 +61,9 @@ public class Listener implements Runnable {
                 TODO test as mentioned in peer.java
                 do not send pack to the peer that is running
                  */
-                if(!(senderAddress == Peer.getAddress())) {
+                System.out.println("SENDER ID: " + senderAddress.toString());
+                System.out.println("MY ID: " + Peer.getAddress().toString());
+                if(!senderAddress.toString().equals(Peer.getAddress().toString())) {
 
                     System.out.println("\t Sender ID: " + senderAddress.toString() + " \n" +
                         "\t PEER ID : " + Peer.getID() + "\n");
@@ -76,6 +78,9 @@ public class Listener implements Runnable {
                         e.printStackTrace();
                     }
 
+                }
+                else {
+                    System.out.println("NOT SENDING PACKET TO MYSELF");
                 }
 
 

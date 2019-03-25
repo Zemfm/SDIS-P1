@@ -17,6 +17,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static main.java.utils.Utilities.getLocalAddress;
+
 public class Peer implements RMI {
 
 
@@ -74,13 +76,7 @@ public class Peer implements RMI {
         }
 
 
-        //TODO: test this. This is used to ensure that a peer isn't sending chunks to himself
-        //see Listener.java TODO same as Utilities.getLocalAdress()? move this there
-        try(final DatagramSocket socket = new DatagramSocket()){
-            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-            //ip = socket.getLocalAddress().getHostAddress(); this returns a string
-            ip = socket.getLocalAddress(); //this returns a InetAddress
-        }
+        ip = getLocalAddress();
 
         MCChannel = new Listener(MCAddress, MCPort);
         MDBChannel = new Listener(MDBAddress, MDBPort);
