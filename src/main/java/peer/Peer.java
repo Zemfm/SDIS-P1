@@ -1,6 +1,6 @@
 package main.java.peer;
 
-import com.sun.deploy.cache.Cache;
+
 import main.java.listeners.Listener;
 import main.java.protocols.Backup;
 import main.java.service.RMI;
@@ -40,9 +40,16 @@ public class Peer implements RMI {
     private static InetAddress ip;
 
     /*
+
+        javac -cp /Users/zemiguel/IdeaProjects/SDIS-P1/src/ peer/Peer.java
+        DENTRO DO SRC: rmiregistry &
         usage:
         protocol version,the server id, service access point, MC, MDB, MDR
-        rmi init example:TODO
+        rmi init example:
+
+        java -Djava.net.preferIPv4Stack=true -Djava.rmi.server.codebase=file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/
+        main/java/service/ main/java/peer/Peer 1.0 0 192.168.0.1 224.0.0.0:8000 224.0.0.0:8001 224.0.0.0:8002
+
         1.0, 0, 192.168.0.1, 224.0.0.0:8000, 224.0.0.0:8001, 224.0.0.0:8002
 
         normal peer example:
@@ -163,7 +170,7 @@ public class Peer implements RMI {
         System.setProperty("java.rmi.server.hostname", "localhost");
         //po meu mac
         System.setProperty("rmi.server.codebase", "file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/main/java/service/bin/");
-       /* try {
+        try {
 
 
             RMI peer = new Peer();
@@ -176,27 +183,7 @@ public class Peer implements RMI {
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
-        }*/
-
-        try {
-            try {
-                LocateRegistry.createRegistry(SERVER_PORT);
-            } catch (RemoteException e) {
-                LocateRegistry.getRegistry(SERVER_PORT);
-                e.printStackTrace();
-            }
-            System.setProperty("java.rmi.server.hostname", SERVER_HOST);
-            connectionRequestHandler = new ConnectionRequestHandlerImpl();
-            dataRequestHandler = new DataRequestHandlerImpl();
-            String rmiUrl = "rmi://" + SERVER_HOST + ":" + SERVER_PORT + "/";
-            Naming.rebind(rmiUrl + "ConnectionRequestHandler", connectionRequestHandler);
-            Naming.rebind(rmiUrl + "DataRequestHandler", dataRequestHandler);
-        } catch (RemoteException e1) {
-            e1.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         }
-    }
 
 
 
