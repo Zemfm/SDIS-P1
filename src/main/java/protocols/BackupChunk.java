@@ -23,17 +23,17 @@ public class BackupChunk implements Runnable {
         int attempt = 0;
         boolean repDegReached = false;
         long timeToRetry = 500;
-
         FileID fID = new FileID(chunk.getFileID().toString());
 
 
         FileChunkID fileChunkID = new FileChunkID(fID.toString(), chunk.getChunkNo());
-        Peer.getMcListener().startCountingStoreds(fileChunkID);
+
+        //Peer.getMCListener().startCountingStoreds(fileChunkID);
         while(!repDegReached) {
 
             timeToRetry = timeToRetry *2;
 
-            Peer.getMcListener().clearCount(fileChunkID);
+            Peer.getMCListener().clearCount(fileChunkID);
 
             try {
                 Broker.sendPUTCHUNK(chunk);
@@ -45,12 +45,12 @@ public class BackupChunk implements Runnable {
             }
 
 
-            int perceivedRepDeg = Peer.getMcListener().getCount(fileChunkID);
+            int perceivedRepDeg = Peer.getMCListener().getCount(fileChunkID);
             // System.out.println("REP DEGREE PERCEIVED: " + perceivedRepDeg);
 
             System.out.println("CONTEI: " + perceivedRepDeg + " de " + chunk.getReplicationDegree());
 
-            Peer.getMcListener().dumpHashmap();
+            Peer.getMCListener().dumpHashmap();
 
             if(perceivedRepDeg < chunk.getReplicationDegree()) {
                 attempt++;
@@ -73,6 +73,6 @@ public class BackupChunk implements Runnable {
 
         }
 
-        Peer.getMcListener().stopCounting(fileChunkID);
+        Peer.getMCListener().stopCounting(fileChunkID);
     }
 }

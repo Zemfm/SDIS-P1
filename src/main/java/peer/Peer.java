@@ -42,7 +42,7 @@ public class Peer implements RMI {
     /*
 
         javac -cp /Users/zemiguel/IdeaProjects/SDIS-P1/src/ peer/Peer.java
-        DENTRO DO SRC: rmiregistry &
+        DENTRO DO /src/: rmiregistry &
         usage:
         protocol version,the server id, service access point, MC, MDB, MDR
         rmi init example:
@@ -196,9 +196,18 @@ public class Peer implements RMI {
 
     }*/
 
-    public static Listener getMcListener() {
+    public static Listener getMCListener() {
         return MCChannel;
     }
+
+    public static Listener getMDBListener() {
+        return MDBChannel;
+    }
+
+    public static Listener getMDRListener() {
+        return MDRChannel;
+    }
+
 
     @Override
     public void backup(File file, int replicationDegree) throws RemoteException {

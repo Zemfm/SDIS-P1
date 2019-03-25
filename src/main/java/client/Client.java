@@ -46,12 +46,16 @@ public class Client {
 
         try {
             Registry registry = LocateRegistry.getRegistry(rmiObjectAddress);
-            peer = (RMI) registry.lookup(rmiObjectName);
+
+            peer = (RMI)registry.lookup(rmiObjectName);
+
 
         } catch (RemoteException | NotBoundException e) {
             System.out.println("Invalid RMI object name");
             return;
         }
+
+
 
 
 
@@ -174,6 +178,7 @@ public class Client {
     public static void parseAccessPoint(String[] args) {
 
         AP = args[0];
+
 
         if(validateAccessPoint(AP)) {
             String[] splittedAP = AP.split("/");

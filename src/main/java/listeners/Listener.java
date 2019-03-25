@@ -111,4 +111,12 @@ public class Listener implements Runnable {
     public void stopCounting(FileChunkID fileChunkID) {
 
     }
+
+    public void send(DatagramPacket messagePacket) throws IOException {
+        multicastSocket.send(messagePacket);
+    }
+
+    public void countPutChunk(FileChunkID chunkID, String senderID) {
+
+    }
 }

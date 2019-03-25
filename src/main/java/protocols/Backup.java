@@ -22,7 +22,7 @@ public class Backup implements Runnable{
     public Backup(File file, int replicationDegree) {
 
         this.file = file;
-        this.repDeg = repDeg;
+        this.repDeg = replicationDegree;
 
     }
 
@@ -69,7 +69,7 @@ public class Backup implements Runnable{
 
             fileID = new FileID(file.getName());
 
-            System.out.println("\t \t >>>>>>>>>>>>>>>>>>>FILE ID: " + fileID);
+            System.out.println("\t \t >>>>>>FILE ID: " + fileID);
 
             FileChunk chunk = new FileChunk(repDeg, i, fileID, chunkData);
             /*try {

@@ -1,6 +1,9 @@
 package main.java.utils;
 
 
+import main.java.file.FileChunk;
+import main.java.file.FileChunkID;
+import main.java.file.FileID;
 import main.java.peer.Peer;
 
 
@@ -74,18 +77,59 @@ public class Utilities {
 
 
 
-    //TODO FINISH AND USE THIS
-    public static String messageConstructor(String messageType/*, FileChunk chunk*/) {
+    //TODO: CONFIRM MESSAGES ARE AS SPECIFIED IN DOCUMENT <- IMPORTANT FOR INTEROPERABILITY
+    public static String messageConstructor(String protocol, FileChunk chunk, FileChunkID chunkID, FileID fileID) {
         String message = "default";
-        switch (messageType) {
+        switch (protocol) {
             case "PUTCHUNK":
-                message = Constants.PUTCHUNK + MESSAGE_SEPARATOR
-                        + Peer.getProtocolVersion() + MESSAGE_SEPARATOR
-                        + Peer.getID() + MESSAGE_SEPARATOR
-                        // + chunk.getFileID() + MESSAGE_SEPARATOR
-                        // + chunk.getChunkNo() + MESSAGE_SEPARATOR
-                        // + chunk.getReplicationDegree() + MESSAGE_SEPARATOR
-                        + CRLF + CRLF;
+                message = PUTCHUNK + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += chunk.getFileID() + MESSAGE_SEPARATOR;
+                message += chunk.getChunkNo() + MESSAGE_SEPARATOR;
+                message += chunk.getReplicationDegree() + MESSAGE_SEPARATOR;
+                message += CRLF + CRLF;
+                message += chunk.getChunkData();
+                break;
+            case "STORED":
+                message = STORED + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += chunkID.getFileID() + MESSAGE_SEPARATOR;
+                message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
+                message += CRLF + CRLF;
+                break;
+            case "REMOVED":
+                message = REMOVED + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += chunkID.getFileID() + MESSAGE_SEPARATOR;
+                message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
+                message += CRLF + CRLF;
+                break;
+            case "DELETE":
+                message = DELETE + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += fileID.toString() + MESSAGE_SEPARATOR;
+                message += CRLF+CRLF;
+                break;
+            case "GETCHUNK":
+                message = GETCHUNK + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += chunkID.getFileID() + MESSAGE_SEPARATOR;
+                message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
+                message += CRLF + CRLF;
+                break;
+            case "CHUNK": //TODO getChunkData might be wrong
+                message = CHUNK + MESSAGE_SEPARATOR;
+                message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
+                message += Peer.getID() + MESSAGE_SEPARATOR;
+                message += chunkID.getFileID() + MESSAGE_SEPARATOR;
+                message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
+                message += CRLF + CRLF;
+                message += chunk.getChunkData();
                 break;
 
         }
