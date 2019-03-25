@@ -1,6 +1,7 @@
 package main.java.listeners;
 
 
+import main.java.file.FileChunkID;
 import main.java.peer.Peer;
 import main.java.service.PacketHandler;
 import main.java.utils.Constants;
@@ -91,4 +92,23 @@ public class Listener implements Runnable {
     }
 
 
+    public void startCountingStoreds(FileChunkID fileChunkID) {
+
+    }
+
+    public void clearCount(FileChunkID fileChunkID) {
+
+    }
+
+    public int getCount(FileChunkID fileChunkID) {
+        return 0;
+    }
+
+    public void dumpHashmap() {
+
+    }
+
+    public void stopCounting(FileChunkID fileChunkID) {
+
+    }
 }

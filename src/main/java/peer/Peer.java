@@ -1,6 +1,9 @@
 package main.java.peer;
 
+import com.sun.deploy.cache.Cache;
 import main.java.listeners.Listener;
+import main.java.protocols.Backup;
+import main.java.service.RMI;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -8,12 +11,13 @@ import java.net.MulticastSocket;
 
 import java.io.*;
 import java.net.*;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Peer {
+public class Peer implements RMI {
 
 
     private static Listener MCChannel;  //MC CHANNEL
@@ -50,7 +54,7 @@ public class Peer {
 
         //this line is used in macOS
         //-Djava.net.preferIPv4Stack=true works better
-        System.setProperty("java.net.preferIPv4Stack", "true");
+        //System.setProperty("java.net.preferIPv4Stack", "true");
 
 
         if(!parseArgs(args)) {
@@ -64,7 +68,7 @@ public class Peer {
 
 
         //TODO: test this. This is used to ensure that a peer isn't sending chunks to himself
-        //see Listener.java TODO
+        //see Listener.java TODO same as Utilities.getLocalAdress()? move this there
         try(final DatagramSocket socket = new DatagramSocket()){
             socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
             //ip = socket.getLocalAddress().getHostAddress(); this returns a string
@@ -156,8 +160,94 @@ public class Peer {
 
     private static void launchRMI() {
 
-        //TODO
+        System.setProperty("java.rmi.server.hostname", "localhost");
+        //po meu mac
+        System.setProperty("rmi.server.codebase", "file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/main/java/service/bin/");
+       /* try {
+
+
+            RMI peer = new Peer();
+
+            RMI stub = (RMI) UnicastRemoteObject.exportObject(peer, 0);
+
+            Registry registry = LocateRegistry.getRegistry();
+            registry.rebind("obj", stub);
+
+        } catch (Exception e) {
+            System.err.println("Server exception: " + e.toString());
+            e.printStackTrace();
+        }*/
+
+        try {
+            try {
+                LocateRegistry.createRegistry(SERVER_PORT);
+            } catch (RemoteException e) {
+                LocateRegistry.getRegistry(SERVER_PORT);
+                e.printStackTrace();
+            }
+            System.setProperty("java.rmi.server.hostname", SERVER_HOST);
+            connectionRequestHandler = new ConnectionRequestHandlerImpl();
+            dataRequestHandler = new DataRequestHandlerImpl();
+            String rmiUrl = "rmi://" + SERVER_HOST + ":" + SERVER_PORT + "/";
+            Naming.rebind(rmiUrl + "ConnectionRequestHandler", connectionRequestHandler);
+            Naming.rebind(rmiUrl + "DataRequestHandler", dataRequestHandler);
+        } catch (RemoteException e1) {
+            e1.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
+
+
+
+    }
+
+
+    //TODO
+    /*public static null getDb() {
+
+
+    }*/
+
+    public static Listener getMcListener() {
+        return MCChannel;
+    }
+
+    @Override
+    public void backup(File file, int replicationDegree) throws RemoteException {
+
+        Thread t = new Thread(new Backup(file, replicationDegree));
+        t.start();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void delete(String filePath) throws RemoteException {
+
+    }
+
+    @Override
+    public void restore(File file) throws RemoteException {
+
+    }
+
+    @Override
+    public String state() throws RemoteException {
+        return null;
+    }
+
+    @Override
+    public void reclaim(int amount) throws RemoteException {
+
+    }
+
+
 
 
     public static int getID() {
@@ -167,4 +257,10 @@ public class Peer {
     public static InetAddress getAddress() {
         return ip;
     }
+
+    public static float getProtocolVersion() {
+        return protocolVersion;
+    }
+
+
 }
