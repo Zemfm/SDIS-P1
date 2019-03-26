@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 import static main.java.utils.Utilities.validateAccessPoint;
 
-
+//TODO: RENAME TO TestApp
 public class Client {
 
 

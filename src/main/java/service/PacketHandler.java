@@ -111,6 +111,25 @@ public class PacketHandler implements Runnable {
 
     private void DELETEHandler() {
 
+        /*
+
+            Enhancement: If a peer that backs up some chunks of the file is not running at the time
+            the initiator peer sends a DELETE message for that file, the space used by these chunks
+            will never be reclaimed. Can you think of a change to the protocol, possibly including
+            additional messages, that would allow to reclaim storage space even in that event?
+
+
+
+            Quando um peer inicia, verificar se tem chunks na pasta /chunks, se tiver, enviar uma mensagem
+            DELETEENH para o MC (por cada chunk, esperando por respostas depois de cada envio)
+            a perguntar se o chunk foi apagado, se receber uma resposta, apaga esse chunk.
+             O(s) peer(s) precisariam de guardar um historico de DELETES. (talvez cada peer ter um historico
+             de cada DELETE msg que iniciou)
+
+
+
+         */
+
     }
 
     private void parseCHUNK() {
@@ -119,6 +138,14 @@ public class PacketHandler implements Runnable {
 
     private void CHUNKHandler() {
 
+        /*
+
+        To avoid flooding the host with CHUNK messages, each peer shall wait for a random time
+        uniformly distributed between 0 and 400 ms, before sending the CHUNK message. If it receives
+        a CHUNK message before that time expires, it will not send the CHUNK message.
+
+         */
+
     }
 
     private void parseGETCHUNK() {
@@ -126,6 +153,27 @@ public class PacketHandler implements Runnable {
     }
 
     private void GETCHUNKHandler() {
+
+        /*
+        Enhancement: If chunks are large, this protocol may not be desirable: only one peer
+        needs to receive the chunk, but we are using a multicast channel for sending the chunk.
+        Can you think of a change to the protocol that would eliminate this problem, and yet interoperate
+         with non-initiator peers that implement the protocol described in this section? Your enhancement
+          must use TCP to get full credit.
+
+
+        Esta msg "CHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF><Body>"
+        passa a ser "CHUNKENH <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF>",
+        depois liga-se por TCP ao ipeer e envia o chunk?
+        Para ligar por TCP:
+        O initiator peer que comecou o protocolo de restore, abre um servidor TCP,
+        depois na msg GETCHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF>
+        envia a port onde os peers se devem ligar para enviar o chunk.
+        O ip pode ser descoberto quando um peer recebe a msg GETCHUNK (senderIP = packetToHandle.getAddress();).
+
+
+
+         */
 
     }
 
