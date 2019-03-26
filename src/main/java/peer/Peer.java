@@ -22,6 +22,17 @@ import static main.java.utils.Utilities.getLocalAddress;
 public class Peer implements RMI {
 
 
+    /*
+        TODO:
+        A peer should also count the number of confirmation messages for each of the chunks
+        it has stored and keep that count in non-volatile memory. This information can be useful
+        if the peer runs out of disk space: in that event, the peer may try to free some space by
+         evicting chunks whose actual replication degree is higher than the desired replication degree.
+
+        R: peer needs a DB
+     */
+
+
     private static Listener MCChannel;  //MC CHANNEL
     private static Listener MDBChannel; //BACKUP CHANNEL
     private static Listener MDRChannel; //RESTORE CHANNEL

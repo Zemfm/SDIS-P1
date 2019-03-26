@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Listener implements Runnable {
@@ -19,11 +21,17 @@ public class Listener implements Runnable {
     public int port;
 
 
+    private ConcurrentHashMap<FileChunkID, ArrayList<String>> storedChunks;
+
+    private ConcurrentHashMap<FileChunkID, ArrayList<String>> putChunks;
+
 
 
     public Listener(InetAddress address, int port) {
         this.address = address;
         this.port = port;
+        this.storedChunks = new ConcurrentHashMap<>();
+        this.putChunks = new ConcurrentHashMap<>();
 
     }
 
@@ -57,13 +65,10 @@ public class Listener implements Runnable {
                 int senderPort = packet.getPort();
 
 
-                /*
-                TODO test as mentioned in peer.java
-                do not send pack to the peer that is running
-                 */
-                System.out.println("SENDER ID: " + senderAddress.toString());
-                System.out.println("MY ID: " + Peer.getAddress().toString());
-                if(!senderAddress.toString().equals(Peer.getAddress().toString())) {
+                /* Force this if statement true to run locally */
+                /* TODO: remove this line (for non-local runs) */
+                boolean debug = true;
+                if(debug ||!senderAddress.toString().equals(Peer.getAddress().toString())) {
 
                     System.out.println("\t Sender ID: " + senderAddress.toString() + " \n" +
                         "\t PEER ID : " + Peer.getID() + "\n");
@@ -80,7 +85,7 @@ public class Listener implements Runnable {
 
                 }
                 else {
-                    System.out.println("NOT SENDING PACKET TO MYSELF");
+                    System.out.println("\n This is my message, ignoring...\n");
                 }
 
 
@@ -99,29 +104,58 @@ public class Listener implements Runnable {
 
     public void startCountingStoreds(FileChunkID fileChunkID) {
 
+        if (!storedChunks.containsKey(fileChunkID)) {
+            //System.out.println("Starting to count:" + chunkID.toString());
+            storedChunks.put(fileChunkID, new ArrayList<>());
+        }
+
     }
 
     public void clearCount(FileChunkID fileChunkID) {
-
+        storedChunks.get(fileChunkID).clear();
     }
 
     public int getCount(FileChunkID fileChunkID) {
-        return 0;
+        return storedChunks.get(fileChunkID).size();
     }
 
     public void dumpHashmap() {
+        for (FileChunkID name: storedChunks.keySet()){
+
+            String key =name.toString();
+            String value = storedChunks.get(name).toString();
+            System.out.println(key + " " + value);
+
+        }
 
     }
 
     public void stopCounting(FileChunkID fileChunkID) {
-
+        storedChunks.remove(fileChunkID);
     }
 
     public void send(DatagramPacket messagePacket) throws IOException {
         multicastSocket.send(messagePacket);
     }
 
+    public synchronized void countStored(FileChunkID chunkID, String senderID) {
+        if (storedChunks.containsKey(chunkID))
+            if (!storedChunks.get(chunkID).contains(senderID))
+                storedChunks.get(chunkID).add(senderID);
+            else
+                System.out.println("Already counted this peer");
+
+    }
+
     public void countPutChunk(FileChunkID chunkID, String senderID) {
 
+    }
+
+    public boolean isCounting(FileChunkID fileChunkID) {
+        if(storedChunks.containsKey(fileChunkID))
+            return true;
+        else {
+            return false;
+        }
     }
 }

@@ -38,8 +38,7 @@ public class Client {
 
     public static void main(String[] args) {
 
-        File file = new File(args[2]);
-        System.out.println("\t file Path: " + file.getPath() + "\n");
+
 
         parseAccessPoint(args);
         parseSubProtocol(args);
@@ -63,7 +62,9 @@ public class Client {
         if(subProtocol.equals("BACKUP")) {
             System.out.println("Initializing Backup...");
             parseBackupArguments(args);
+
             try {
+                File file = new File(filePath);
                 peer.backup(file, replicationDegree);
                 System.out.println("\t File Path: " + filePath + "\n");
             } catch (RemoteException e) {
@@ -74,6 +75,7 @@ public class Client {
             parseRestoreArguments(args);
 
             try {
+                File file = new File(filePath);
                 peer.restore(file);
             } catch (RemoteException e) {
                 e.printStackTrace();

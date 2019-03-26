@@ -45,11 +45,12 @@ public class BackupChunk implements Runnable {
 
             timeToRetry = timeToRetry *2;
 
-            Peer.getMCListener().clearCount(fileChunkID);
+            if(Peer.getMCListener().isCounting(fileChunkID))
+                Peer.getMCListener().clearCount(fileChunkID);
 
             try {
                 Broker.sendPUTCHUNK(chunk);
-
+                Peer.getMCListener().startCountingStoreds(fileChunkID);
                 System.out.println("Listening for STOREDs for " + timeToRetry + "ms");
                 Thread.sleep(timeToRetry);
             } catch (InterruptedException e) {

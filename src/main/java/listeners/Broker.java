@@ -130,18 +130,12 @@ public class Broker {
 
     private static void sendToMDB(byte[] backupMessage) throws InterruptedException {
 
-        //System.out.println("Sending to MDB...\n");
 
-        /*System.out.println("\t Multicast Data Backup Channel Info: \n"
-                + "\t MDB Address : " + mdbChannel.address +
-                "\n"
-                + "\t MDB Port: " + mdbChannel.port + "\n");*/
         DatagramPacket messagePacket = new DatagramPacket(backupMessage, backupMessage.length, Peer.getMDBListener().address, Peer.getMDBListener().port);
-
-        Thread.sleep((long)(Math.random() * MAX_WAITING_TIME)); //random timeout between 0 amd 400ms
+        
         try {
             Peer.getMDBListener().send(messagePacket);
-            //System.out.println("\t Sent do MDB\n");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -152,18 +146,13 @@ public class Broker {
 
     private static void sendToMC(byte[] backupMessage) {
 
-        //System.out.println("Sending to MDB...\n");
 
-        /*System.out.println("\t Multicast Data Backup Channel Info: \n"
-                + "\t MDB Address : " + mdbChannel.address +
-                "\n"
-                + "\t MDB Port: " + mdbChannel.port + "\n");*/
         DatagramPacket messagePacket = new DatagramPacket(backupMessage, backupMessage.length, Peer.getMCListener().address, Peer.getMCListener().port);
 
-        //Thread.sleep((long)(Math.random() * MAX_WAITING_TIME)); //random timeout between 0 amd 400ms
+
         try {
             Peer.getMCListener().send(messagePacket);
-            //System.out.println("\t Sent do MDB\n");
+
         } catch (IOException e) {
             e.printStackTrace();
         }

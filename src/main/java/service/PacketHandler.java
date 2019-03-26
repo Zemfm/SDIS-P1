@@ -25,7 +25,7 @@ public class PacketHandler implements Runnable {
     private float protocolVersion;
     private int replicationDegree;
     private int chunkNo;
-    private String senderID;
+    private int senderID;
     private int bodyStartingIndex;
     private String[] header_splitted;
 
@@ -103,6 +103,16 @@ public class PacketHandler implements Runnable {
 
     private void REMOVEDHandler() {
 
+        /*
+        TODO:
+        Upon receiving this message, a peer that has a local copy of the chunk shall
+        update its local count of this chunk. If this count drops below the desired replication
+        degree of that chunk, it shall initiate the chunk backup subprotocol after a random delay
+         uniformly distributed between 0 and 400 ms. If during this delay, a peer receives a PUTCHUNK
+          message for the same file chunk, it should back off and restrain from starting yet another
+           backup subprotocol for that file chunk.
+         */
+
     }
 
     private void parseDELETE() {
@@ -171,6 +181,8 @@ public class PacketHandler implements Runnable {
         envia a port onde os peers se devem ligar para enviar o chunk.
         O ip pode ser descoberto quando um peer recebe a msg GETCHUNK (senderIP = packetToHandle.getAddress();).
 
+        ex TCP: https://www.pegaxchange.com/2017/12/07/simple-tcp-ip-server-client-java/
+
 
 
          */
@@ -178,10 +190,19 @@ public class PacketHandler implements Runnable {
     }
 
     private void parseSTORED() {
+        //STORED <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF>
+
+        protocolVersion = Float.parseFloat(header_splitted[1]);
+        senderID = Integer.parseInt(header_splitted[2]);
+        fileID = new FileID(header_splitted[3]);
+        chunkNo = Integer.parseInt(header_splitted[4]);
 
     }
 
     private void STOREDHandler() {
+
+        FileChunkID fcID = new FileChunkID(fileID.toString(), chunkNo);
+        Peer.getMCListener().countStored(fcID, String.valueOf(senderID));
 
     }
 
@@ -191,7 +212,7 @@ public class PacketHandler implements Runnable {
 
         replicationDegree = Integer.parseInt(header_splitted[5]);
         protocolVersion = Float.parseFloat(header_splitted[1]);
-        senderID = header_splitted[2];
+        senderID = Integer.parseInt(header_splitted[2]);
         fileID = new FileID(header_splitted[3]);
         chunkNo = Integer.parseInt(header_splitted[4]);
 
@@ -227,43 +248,35 @@ public class PacketHandler implements Runnable {
         File chunkfile = new File("Chunks/" + chunkID.toString());
 
 
-
-        Peer.getMDBListener().countPutChunk(chunkID, senderID);
+        /* TODO: not needed? */
+        Peer.getMDBListener().countPutChunk(chunkID, String.valueOf(senderID));
 
         if(chunkfile.exists()) {
-            /* try {
-                System.out.println("A chunk with the same name already exists, send STORED but not backing up...");
-                Thread.sleep((long)(Math.random() * MAX_WAITING_TIME)); //acho que aqui n precisa de sleep
-            } catch (InterruptedException ie) {
-                ie.printStackTrace();
-            }*/
+            System.out.println("\n\t I already have this chunk, sending STORED...");
             Broker.sendSTORED(chunkID);
         } else {
 
-            if(senderIP != getLocalAddress()){
-                try {
-                    System.out.println("Entrei!!!");
-                    FileOutputStream out = new FileOutputStream("Chunks/" + chunkID.toString());
-                    System.out.println("Saving Chunk...");
-                    out.write(packet_body);
-                    out.close();
 
-                    try{
-                        System.out.println("Sending STORED response");
-                        Thread.sleep((long)(Math.random() * MAX_WAITING_TIME)); //acho que aqui n precisa de sleep
-                    } catch (InterruptedException ie){
-                        ie.printStackTrace();
-                    }
-                    Broker.sendSTORED(chunkID);
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            try {
+                FileOutputStream out = new FileOutputStream("Chunks/" + chunkID.toString());
+                System.out.println("Saving Chunk...");
+                out.write(packet_body);
+                out.close();
+
+                try{
+                    System.out.println("Sending STORED response");
+                    Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
+                } catch (InterruptedException ie){
+                    ie.printStackTrace();
                 }
-                else {
-                System.out.println("I");
 
-            }
+                Broker.sendSTORED(chunkID);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
 
         }
 

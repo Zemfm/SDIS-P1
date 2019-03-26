@@ -38,8 +38,6 @@ public class Backup implements Runnable{
 
         int fileParts = fileData.length / CHUNK_MAX_SIZE;
 
-        System.out.println("File : " + file.getName() + "  will be split into " + fileParts + " in " + file.getPath() + "\n");
-
         String fileName = file.getName();
 
         ByteArrayInputStream streamBuffer = new ByteArrayInputStream(fileData);
@@ -49,9 +47,6 @@ public class Backup implements Runnable{
         for(int i = 0; i <= fileParts; i++) {
             FileChunkID id = new FileChunkID(file.getName(), i);
 
-
-            /*System.out.println("Chunk Number : " + id.getChunkNumber() + " \n" + "ChunkID : " + id.getFileID() + "\n");
-            System.out.println("ChunkRepDeg: " + chunk.getReplicationDegree() + "\n");*/
 
             byte[] chunkData;
 
@@ -67,16 +62,9 @@ public class Backup implements Runnable{
                 chunkData = Arrays.copyOfRange(data, 0, bytesRead);
             }
 
-            fileID = new FileID(file.getName());
-
-            System.out.println("\t \t >>>>>>FILE ID: " + fileID);
+            fileID = new FileID(sha256(file.getName()));
 
             FileChunk chunk = new FileChunk(repDeg, i, fileID, chunkData);
-            /*try {
-                sendPUTCHUNK(chunk);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }*/
 
             Thread t = new Thread(new BackupChunk(chunk));
             t.start();
@@ -132,9 +120,6 @@ public class Backup implements Runnable{
         //System.out.println("\t STORED FILES: " + s + "\n");
 
 
-
-        //TODO:
-        //sendPUTCHUNK();
 
 
 
