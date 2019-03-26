@@ -11,35 +11,25 @@ import java.io.IOException;
 
 public class BackupChunk implements Runnable {
 
-    FileChunk chunk;
-
+    public FileChunk chunk;
+    public boolean repDegReached;
 
     public BackupChunk(FileChunk chunk) {
         this.chunk = chunk;
+        repDegReached = false;
     }
 
     @Override
     public void run() {
         int attempt = 0;
-        boolean repDegReached = false;
+
         long timeToRetry = 500;
         FileID fID = new FileID(chunk.getFileID().toString());
 
 
         FileChunkID fileChunkID = new FileChunkID(fID.toString(), chunk.getChunkNo());
 
-        //Peer.getMCListener().startCountingStoreds(fileChunkID);
 
-        /*
-            done?:
-            This message is used to ensure that the chunk is backed up with the desired replication degree
-            as follows. The initiator-peer collects the confirmation messages during a time interval of one
-            second. If the number of confirmation messages it received up to the end of that interval is lower
-             than the desired replication degree, it retransmits the backup message on the MDB channel, and doubles
-            the time interval for receiving confirmation messages. This procedure is repeated up to a maximum
-             number of five times, i.e. the initiator will send at most 5 PUTCHUNK messages per chunk.
-
-         */
 
         while(!repDegReached) {
 
@@ -67,9 +57,10 @@ public class BackupChunk implements Runnable {
             if(perceivedRepDeg < chunk.getReplicationDegree()) {
                 attempt++;
 
-                if(attempt > 5) {
-                    System.out.println("The Desired Replication Degree wasn't reached, terminating...");
+                if(attempt > 4) {
+                    System.out.println("The Desired Replication Degree wasn't reached, skipping chunk...");
                     repDegReached = true;
+                    return;
 
 
                 }
@@ -84,6 +75,8 @@ public class BackupChunk implements Runnable {
             }
 
         }
+
+
 
         Peer.getMCListener().stopCounting(fileChunkID);
     }
