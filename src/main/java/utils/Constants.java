@@ -17,5 +17,6 @@ public class Constants {
     public static final String ENCODING = "ISO-8859-1";
     public static final int MAX_WAITING_TIME = 400;
     public static final int DISK_SIZE = 2560;
+    public static final int PACKET_MAX_SIZE = 65000;
 
 }

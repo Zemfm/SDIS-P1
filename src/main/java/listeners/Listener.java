@@ -14,6 +14,8 @@ import java.net.MulticastSocket;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static main.java.utils.Constants.*;
+
 
 public class Listener implements Runnable {
 
@@ -57,7 +59,7 @@ public class Listener implements Runnable {
         boolean end = false;
         while(!end) {
 
-            byte[] buffer = new byte[Constants.CHUNK_MAX_SIZE];
+            byte[] buffer = new byte[PACKET_MAX_SIZE];
             Thread t;
             try {
 
