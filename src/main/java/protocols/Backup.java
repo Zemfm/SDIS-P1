@@ -16,6 +16,7 @@ public class Backup implements Runnable{
     private int repDeg;
     private String encryptedID;
     private FileID fileID;
+    private int fileParts;
     //private static Message message;
 
 
@@ -36,7 +37,8 @@ public class Backup implements Runnable{
 
         byte[] fileData = loadFileData(file);
 
-        int fileParts = fileData.length / CHUNK_MAX_SIZE;
+        fileParts = fileData.length / CHUNK_MAX_SIZE;
+
 
         String fileName = file.getName();
 
@@ -66,7 +68,7 @@ public class Backup implements Runnable{
             /* TODO: SHA */
             fileID = new FileID(file.getName());
 
-
+            fileID.setNumChunks(fileParts + 1);
 
 
             FileChunk chunk = new FileChunk(repDeg, i, fileID, chunkData);
@@ -105,7 +107,7 @@ public class Backup implements Runnable{
         //TODO
         //FileID fileID = new FileID(file.getName());
 
-        //Peer.getDb().insertFile(file.getName(), fileID);
+        Peer.getDb().insertFile(file.getName(), fileID);
         //String s = Peer.getDb().printStoredFiles();
 
         //System.out.println("\t STORED FILES: " + s + "\n");

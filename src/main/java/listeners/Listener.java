@@ -168,13 +168,12 @@ public class Listener implements Runnable {
         MDR
      */
     public synchronized void queueChunk(FileChunk chunk) {
-        System.out.println("CHUNK TO MERGE: " + chunk.getFileID().toString());
+        //System.out.println("CHUNK TO MERGE: " + chunk.getFileID().toString());
         ArrayList<FileChunk> fileChunks = chunksReceived.get(chunk.getFileID().toString());
         fileChunks.add(chunk);
-        System.out.println("File Chunks :" + fileChunks);
+        //System.out.println("File Chunks: " + fileChunks);
 
-        //chunksReceived.get(chunk.getFileID().toString()).add(chunk);
-        printChunksReceived();
+        //printChunksReceived();
         notifyAll();
     }
 
@@ -188,7 +187,7 @@ public class Listener implements Runnable {
         for (String name: chunksReceived.keySet()){
 
             String value = chunksReceived.get(name).toString();
-            System.out.println(name + " " + value);
+            System.out.println(name + ": " + value);
         }
     }
 

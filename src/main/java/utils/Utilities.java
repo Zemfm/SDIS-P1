@@ -132,11 +132,11 @@ public class Utilities {
                 message += CRLF + CRLF;
                 msgToSend = message.getBytes();
                 break;
-            case "CHUNK": //TODO getChunkData might be wrong
+            case "CHUNK":
                 message = CHUNK + MESSAGE_SEPARATOR;
                 message += Peer.getProtocolVersion() + MESSAGE_SEPARATOR;
                 message += Peer.getID() + MESSAGE_SEPARATOR;
-                message += chunkID.getFileID() + MESSAGE_SEPARATOR;
+                message += chunk.getFileID().toString() + MESSAGE_SEPARATOR;
                 message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
                 msgToSend = concatBytes(message.getBytes(), chunk.getChunkData());

@@ -165,25 +165,14 @@ public class PacketHandler implements Runnable {
 
     private void CHUNKHandler() {
 
-        /*
-
-        To avoid flooding the host with CHUNK messages, each peer shall wait for a random time
-        uniformly distributed between 0 and 400 ms, before sending the CHUNK message. If it receives
-        a CHUNK message before that time expires, it will not send the CHUNK message.
-
-         */
 
 
         FileChunk chunk = new FileChunk(-1, chunkNo, fileID, packet_body);
-        try {
-            Thread.sleep(400);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
 
         Peer.getMDRListener().queueChunk(chunk);
-        System.out.println("\t CHUNKS RECEIVED : ");
-        Peer.getMDRListener().printChunksReceived();
+        //System.out.println("\t CHUNKS RECEIVED : ");
+        //Peer.getMDRListener().printChunksReceived();
 
     }
 
@@ -249,13 +238,21 @@ public class PacketHandler implements Runnable {
 
         FileChunk chunk = new FileChunk(-1, chunkID.getChunkNumber(), fileID, chunkData);
 
+        /*
+
+        To avoid flooding the host with CHUNK messages, each peer shall wait for a random time
+        uniformly distributed between 0 and 400 ms, before sending the CHUNK message. If it receives
+        a CHUNK message before that time expires, it will not send the CHUNK message.
+
+         */
+
         try { //TODO: DO NOT SEND IF I RECEIVE A CHUNK MESSAGE DURING THIS
             Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        Broker.sendCHUNK(chunk);
+        Broker.sendCHUNK(chunk, chunkID);
 
 
 
@@ -298,6 +295,7 @@ public class PacketHandler implements Runnable {
     private void PUTCHUNKHandler() throws IOException {
 
         parseBody();
+
         File dir = new File("Chunks/");
         boolean test = false;
 

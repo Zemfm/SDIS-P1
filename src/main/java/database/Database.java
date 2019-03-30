@@ -20,6 +20,7 @@ public class Database implements Serializable {
     private  ConcurrentHashMap<FileChunkID, ArrayList<String>> perceivedRepDeg;
     private  ConcurrentHashMap<FileChunkID, Integer> desiredRepDeg;
 
+    private volatile ConcurrentHashMap<String, FileID> storedFiles;
 
     public Database() {
         database = new ConcurrentHashMap<>();
@@ -29,7 +30,7 @@ public class Database implements Serializable {
         desiredRepDeg = new ConcurrentHashMap<FileChunkID, Integer>();
     }
 
-    private volatile ConcurrentHashMap<String, FileID> storedFiles;
+
 
 
     public void insertChunk(FileID fileID, int replicationDegree, int chunkNo, byte[] chunkData) {
@@ -82,6 +83,10 @@ public class Database implements Serializable {
         storedFiles.put(fileName, fileID);
 
         Peer.saveDBToDisk();
+    }
+
+    public int getNumChunksOfFile(String fileName){
+        return storedFiles.get(fileName).getNumChunks();
     }
 
     public String printStoredFiles() {

@@ -26,8 +26,8 @@ public class Restore implements Runnable {
         byte[] fileData = new byte[0];
 
 
-
-        String filename = new FileID(sha256(file.getName())).toString();
+        /* TODO: SHA */
+        String filename = new FileID(file.getName()).toString();
 
 
 
@@ -36,23 +36,23 @@ public class Restore implements Runnable {
 
 
 
-        //split file into chunks
-
-        int fileParts = fileData.length / CHUNK_MAX_SIZE;
-        System.out.println(fileParts);
-
         //Check if file was backed up already
         if(Peer.getDb().isFileStored(filename)){
             System.out.println("The file is stored in the database");
 
-            System.out.println("\t Preparing to Restore the File " + filename + "\n");
+            System.out.println("\t Preparing to Restore the File: " + filename + "\n");
             Peer.getMDRListener().chunksReceived.put(filename, new ArrayList<>());
             ArrayList<FileChunk> chunks = new ArrayList<>();
+
             ArrayList<FileChunk> fileChunks;
+
+            int fileParts = Peer.getDb().getNumChunksOfFile(filename);
+
+
             for (int i = 0; i < fileParts; i++) {
 
                 FileChunkID chunkID = new FileChunkID(filename, i);
-                System.out.println(chunkID);
+
 
 
                 //send get chunk
@@ -60,7 +60,7 @@ public class Restore implements Runnable {
 
                 //receive chunk
                 fileChunks = Peer.getMDRListener().chunksReceived.get(filename);
-                System.out.println("FILE CHUNKS SIZE : " + Peer.getMDRListener().chunksReceived.size());
+
 
                 FileChunk chunkAUX = fileChunks.isEmpty() ? null : Peer.getMDRListener().chunksReceived.get(filename).remove(0);
 
@@ -76,25 +76,17 @@ public class Restore implements Runnable {
 
                 chunks.add(chunkAUX);
 
-                System.out.println("CHUNK RECEIVED: " + chunks);
 
                 //System.out.println("DATABASE : ");
                 //Peer.getDb().printDatabase();
             }
 
-            System.out.println("HEEEEEEY \n ");
 
-            Peer.getMDRListener().printChunksReceived();
 
-           /* FileChunk aux;
-            if(fileChunks.isEmpty())
-                aux = null;
-            aux = Peer.getMdrChannel().chunksReceived.get(filename).remove(0);*/
 
             for (int i = 0; i < fileParts; i++) {
                 FileChunk chunkTmp = null;
                 ArrayList<FileChunk> chunkAUX = null;
-                System.out.println("\t File Chunks: " + chunks);
                 for(FileChunk chunk : chunks) {
                     if(chunk.getChunkNo() == i) {
                         chunkTmp = chunk;
@@ -106,7 +98,7 @@ public class Restore implements Runnable {
                     System.out.println("Missing chunk file!!");
                 } else {
                     try {
-                        concatBytes(fileData, chunkTmp.getChunkData());
+                        fileData = concatBytes(fileData, chunkTmp.getChunkData());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -142,12 +134,6 @@ public class Restore implements Runnable {
             System.out.println("\t The file you are trying to restore does not exist. Confirm if it was backed up");
         }
 
-
-        File filetoRestore = new File(file.getAbsolutePath());
-
-        long fileNumberOfChunks = file.length() / CHUNK_MAX_SIZE;
-
-        System.out.println(fileNumberOfChunks);
 
 
 

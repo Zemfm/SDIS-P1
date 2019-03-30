@@ -113,8 +113,8 @@ public class Broker {
 
     }
 
-    public static void sendCHUNK(FileChunk chunk) {
-        byte message[] = messageConstructor("CHUNK", chunk, null, null);
+    public static void sendCHUNK(FileChunk chunk, FileChunkID chunkID) {
+        byte message[] = messageConstructor("CHUNK", chunk, chunkID, null);
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

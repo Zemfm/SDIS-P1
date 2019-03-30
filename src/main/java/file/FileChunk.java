@@ -34,5 +34,10 @@ public class FileChunk implements Serializable {
     public int getReplicationDegree() {
         return replicationDegree;
     }
+
+    @Override
+    public String toString() {
+        return new String(chunkData);
+    }
 }
 
