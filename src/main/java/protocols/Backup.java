@@ -62,6 +62,8 @@ public class Backup implements Runnable{
                 chunkData = Arrays.copyOfRange(data, 0, bytesRead);
             }
 
+
+            /* TODO: SHA */
             fileID = new FileID(file.getName());
 
 
