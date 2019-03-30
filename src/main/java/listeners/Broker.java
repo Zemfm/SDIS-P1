@@ -17,11 +17,11 @@ public class Broker {
 
 
     public static void sendSTORED(FileChunkID chunkID) {
-        String message = messageConstructor("STORED", null, chunkID, null);
+        byte message[] = messageConstructor("STORED", null, chunkID, null);
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
 
@@ -34,11 +34,11 @@ public class Broker {
     }
 
     public static void sendDELETE(FileID fileID) {
-        String message = messageConstructor("DELETE", null, null, fileID);
+        byte message[] = messageConstructor("DELETE", null, null, fileID);
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
 
@@ -49,20 +49,24 @@ public class Broker {
         }
 
 
-        Broker.sendToMC(message.getBytes());
+
     }
 
 
 
     public static void sendPUTCHUNK(FileChunk chunk) throws InterruptedException {
-        String message = messageConstructor("PUTCHUNK", chunk, null, null);
+        byte message[] = messageConstructor("PUTCHUNK", chunk, null, null);
+
 
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
+
+
+
 
             Broker.sendToMDB(messageToSend);
         }
@@ -73,12 +77,12 @@ public class Broker {
 
     public static void sendREMOVED(FileChunkID chunkID){
 
-        String message = messageConstructor("REMOVED", null, chunkID, null);
+        byte message[] = messageConstructor("REMOVED", null, chunkID, null);
 
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
 
@@ -91,11 +95,11 @@ public class Broker {
     }
 
     public static void sendGETCHUNK(FileChunkID chunkID) {
-        String message = messageConstructor("GETCHUNK", null, chunkID, null);
+        byte message[] = messageConstructor("GETCHUNK", null, chunkID, null);
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
 
@@ -110,15 +114,15 @@ public class Broker {
     }
 
     public static void sendCHUNK(FileChunk chunk) {
-        String message = messageConstructor("CHUNK", chunk, null, null);
+        byte message[] = messageConstructor("CHUNK", chunk, null, null);
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(message.getBytes());
+            outputStream.write(message);
 
             byte messageToSend[] = outputStream.toByteArray();
 
-            Broker.sendToMC(messageToSend);
+            Broker.sendToMDR(messageToSend);
         }
         catch(IOException e){
             e.printStackTrace();
@@ -132,7 +136,7 @@ public class Broker {
 
 
         DatagramPacket messagePacket = new DatagramPacket(backupMessage, backupMessage.length, Peer.getMDBListener().address, Peer.getMDBListener().port);
-        
+
         try {
             Peer.getMDBListener().send(messagePacket);
 

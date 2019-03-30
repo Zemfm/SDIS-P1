@@ -9,6 +9,8 @@ import main.java.peer.Peer;
 
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
 import java.security.MessageDigest;
@@ -39,9 +41,8 @@ public class Utilities {
         }
     }
 
-    public static void info_message(String message) {
-        System.out.println(message);
-    }
+
+
 
     public static InetAddress getLocalAddress() throws IOException
     {
@@ -78,8 +79,13 @@ public class Utilities {
 
 
     //TODO: CONFIRM MESSAGES ARE AS SPECIFIED IN DOCUMENT <- IMPORTANT FOR INTEROPERABILITY
-    public static String messageConstructor(String protocol, FileChunk chunk, FileChunkID chunkID, FileID fileID) {
+    public static byte[] messageConstructor(String protocol, FileChunk chunk, FileChunkID chunkID, FileID fileID) {
         String message = "default";
+
+        byte[] msgToSend = new byte[0];
+
+        //TODO: chunkgetChunkData() only works for txt. message could be byte[]?
+
         switch (protocol) {
             case "PUTCHUNK":
                 message = PUTCHUNK + MESSAGE_SEPARATOR;
@@ -89,7 +95,7 @@ public class Utilities {
                 message += chunk.getChunkNo() + MESSAGE_SEPARATOR;
                 message += chunk.getReplicationDegree() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
-                message += chunk.getChunkData();
+                msgToSend = concatBytes(message.getBytes(), chunk.getChunkData());
                 break;
             case "STORED":
                 message = STORED + MESSAGE_SEPARATOR;
@@ -98,6 +104,7 @@ public class Utilities {
                 message += chunkID.getFileID() + MESSAGE_SEPARATOR;
                 message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
+                msgToSend = message.getBytes();
                 break;
             case "REMOVED":
                 message = REMOVED + MESSAGE_SEPARATOR;
@@ -106,6 +113,7 @@ public class Utilities {
                 message += chunkID.getFileID() + MESSAGE_SEPARATOR;
                 message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
+                msgToSend = message.getBytes();
                 break;
             case "DELETE":
                 message = DELETE + MESSAGE_SEPARATOR;
@@ -113,6 +121,7 @@ public class Utilities {
                 message += Peer.getID() + MESSAGE_SEPARATOR;
                 message += fileID.toString() + MESSAGE_SEPARATOR;
                 message += CRLF+CRLF;
+                msgToSend = message.getBytes();
                 break;
             case "GETCHUNK":
                 message = GETCHUNK + MESSAGE_SEPARATOR;
@@ -121,6 +130,7 @@ public class Utilities {
                 message += chunkID.getFileID() + MESSAGE_SEPARATOR;
                 message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
+                msgToSend = message.getBytes();
                 break;
             case "CHUNK": //TODO getChunkData might be wrong
                 message = CHUNK + MESSAGE_SEPARATOR;
@@ -129,11 +139,24 @@ public class Utilities {
                 message += chunkID.getFileID() + MESSAGE_SEPARATOR;
                 message += chunkID.getChunkNumber() + MESSAGE_SEPARATOR;
                 message += CRLF + CRLF;
-                message += chunk.getChunkData();
+                msgToSend = concatBytes(message.getBytes(), chunk.getChunkData());
                 break;
 
         }
-        return message;
+        return msgToSend;
+    }
+
+
+    public static byte[] concatBytes(byte[] a, byte[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+
+        byte[] c = new byte[aLen + bLen];
+
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+
+        return c;
     }
 
 }

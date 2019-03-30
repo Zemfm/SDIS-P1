@@ -1,6 +1,7 @@
 package main.java.service;
 
 
+import main.java.file.FileChunk;
 import main.java.file.FileChunkID;
 import main.java.file.FileID;
 import main.java.listeners.Broker;
@@ -42,14 +43,13 @@ public class PacketHandler implements Runnable {
 
     @Override
     public void run() {
-        //System.out.println("HANDLER RUNNING...");
-        //System.out.println("PACKET HEADER LENGTH " + packet_header.length());
-        //int body_index_start = packet_header.length() + (2* CRLF.getBytes().length);
-        //System.out.println(body_index_start);
 
+        /* TODO: should be boolean */
         parseSubProtocol();
         //parseHeader();
 
+
+        /* TODO: parse should be boolean */
         switch (subprotocol) {
             case PUTCHUNK:
                 parsePUTCHUNK();
@@ -79,7 +79,12 @@ public class PacketHandler implements Runnable {
                 parseREMOVED();
                 REMOVEDHandler();
                 break;
+
+                default: System.out.println("Unknown protocol. Ignoring message...");
+                break;
+
         }
+
     }
 
     private void parseSubProtocol() {
@@ -128,21 +133,33 @@ public class PacketHandler implements Runnable {
             will never be reclaimed. Can you think of a change to the protocol, possibly including
             additional messages, that would allow to reclaim storage space even in that event?
 
+            Os peers respondem quando fazem delete, o initiator peer diminui o repdegree, se chegar a 0
+            todos os peers que tinham esse chunk apagaram. Se nao chegar a 0, é pq há um peer offline
+            que não apagou. Nesse caso, guardar numa hash, o chunkID e repDegree.
+            Quando um peer se liga, pergunta no broadcast se existem chunks por apagar, se alguém responder,
+            procurar na pasta chunk pelo chunk, ao encontrar, apaga e o initiator peer que avisou que havia
+            um chunk por apagar, diminui o rep degree, se chegar a 0 apaga esse valor da hash.
 
-
+            OU: (pior, mas mais simples)
             Quando um peer inicia, verificar se tem chunks na pasta /chunks, se tiver, enviar uma mensagem
             DELETEENH para o MC (por cada chunk, esperando por respostas depois de cada envio)
             a perguntar se o chunk foi apagado, se receber uma resposta, apaga esse chunk.
              O(s) peer(s) precisariam de guardar um historico de DELETES. (talvez cada peer ter um historico
              de cada DELETE msg que iniciou)
 
-
-
          */
 
     }
 
     private void parseCHUNK() {
+
+        //CHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF><Body>
+
+        protocolVersion = Float.parseFloat(header_splitted[1]);
+        senderID = Integer.parseInt(header_splitted[2]);
+        fileID = new FileID(header_splitted[3]);
+        chunkNo = Integer.parseInt(header_splitted[4]);
+        parseBody();
 
     }
 
@@ -156,13 +173,34 @@ public class PacketHandler implements Runnable {
 
          */
 
+
+        FileChunk chunk = new FileChunk(-1, chunkNo, fileID, packet_body);
+        try {
+            Thread.sleep(400);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Peer.getMDRListener().queueChunk(chunk);
+        System.out.println("\t CHUNKS RECEIVED : ");
+        Peer.getMDRListener().printChunksReceived();
+
     }
 
     private void parseGETCHUNK() {
 
+        /* GETCHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF> */
+
+        protocolVersion = Float.parseFloat(header_splitted[1]);
+        senderID = Integer.parseInt(header_splitted[2]);
+        fileID = new FileID(header_splitted[3]);
+        chunkNo = Integer.parseInt(header_splitted[4]);
+
+
     }
 
     private void GETCHUNKHandler() {
+
 
         /*
         Enhancement: If chunks are large, this protocol may not be desirable: only one peer
@@ -183,9 +221,48 @@ public class PacketHandler implements Runnable {
 
         ex TCP: https://www.pegaxchange.com/2017/12/07/simple-tcp-ip-server-client-java/
 
-
-
          */
+
+        FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
+        FileInputStream is = null;
+        File chunkFile = new File("Chunks/" + chunkID);
+        try {
+            is  = new FileInputStream(chunkFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        byte[] chunkData = new byte[(int) chunkFile.length()];
+
+        try {
+            assert is != null;
+            is.read(chunkData);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            is.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        FileChunk chunk = new FileChunk(-1, chunkID.getChunkNumber(), fileID, chunkData);
+
+        try { //TODO: DO NOT SEND IF I RECEIVE A CHUNK MESSAGE DURING THIS
+            Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Broker.sendCHUNK(chunk);
+
+
+
+
+
+
+
 
     }
 
@@ -236,7 +313,6 @@ public class PacketHandler implements Runnable {
             }
 
         }
-
         packet_body = Arrays.copyOfRange(packetToHandle.getData(), bodyStartingIndex, packetToHandle.getLength());
         FileID fileID = new FileID(header_splitted[3]);
         String fileName = fileID.toString();
@@ -246,6 +322,9 @@ public class PacketHandler implements Runnable {
         System.out.println("\t PUT CHUNK " + header_splitted[3] + " with Replication Degree : " + replicationDegree  + " in " + "./Chunks");
         System.out.println("Chunk ID: " + chunkID.toString());
         File chunkfile = new File("Chunks/" + chunkID.toString());
+
+
+
 
 
         /* TODO: not needed? */

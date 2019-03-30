@@ -4,12 +4,15 @@ import main.java.service.RMI;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.regex.Pattern;
 
+import static main.java.utils.Constants.*;
+import static main.java.utils.Utilities.*;
 import static main.java.utils.Utilities.validateAccessPoint;
 
 //TODO: RENAME TO TestApp
@@ -144,7 +147,7 @@ public class Client {
 
     private static boolean parseRestoreArguments(String[] args) {
         if(args.length != 3) {
-            System.out.println("\t Usage:  <accessPoint> RESTORE <filePath> <replicationDegree> \n");
+            System.out.println("\t Usage: peer <accessPoint> RESTORE <filePath> <replicationDegree> \n");
             return false;
         } else {
             filePath = args[2];

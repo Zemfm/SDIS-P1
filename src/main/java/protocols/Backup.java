@@ -3,12 +3,12 @@ package main.java.protocols;
 import main.java.file.*;
 import main.java.peer.Peer;
 
+
 import java.io.*;
 import java.util.Arrays;
 
-import static main.java.utils.Constants.CHUNK_MAX_SIZE;
-import static main.java.utils.Utilities.sha256;
-
+import static main.java.utils.Constants.*;
+import static main.java.utils.Utilities.*;
 
 public class Backup implements Runnable{
 
@@ -62,7 +62,10 @@ public class Backup implements Runnable{
                 chunkData = Arrays.copyOfRange(data, 0, bytesRead);
             }
 
-            fileID = new FileID(sha256(file.getName()));
+            fileID = new FileID(file.getName());
+
+
+
 
             FileChunk chunk = new FileChunk(repDeg, i, fileID, chunkData);
 
@@ -75,39 +78,25 @@ public class Backup implements Runnable{
                 e.printStackTrace();
             }
         }
-        //Peer.saveDBToDisk();
+        Peer.saveDBToDisk();
 
 
         return fileParts;
 
     }
 
-    private byte[] loadFileData(File file) throws FileNotFoundException {
-        FileInputStream inputStream = new FileInputStream(file);
-        byte[] fileData = new byte[(int) file.length()];
-
-        try {
-            inputStream.read(fileData);
-            inputStream.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return fileData;
-    }
-
 
     @Override
     public void run() {
-        String fileIDString;
-        fileIDString = file.getName() + file.getPath() + file.lastModified();
-        encryptedID = sha256(fileIDString);
+        //String fileIDString;
+        //fileIDString = file.getName() + file.getPath() + file.lastModified();
+        //encryptedID = sha256(fileIDString);
         try {
             createChunks(file);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
 
 
@@ -124,6 +113,23 @@ public class Backup implements Runnable{
 
 
 
+    }
+
+    public static byte[] loadFileData(File file) throws FileNotFoundException {
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] fileData = new byte[(int) file.length()];
+
+        try {
+            inputStream.read(fileData);
+            inputStream.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        return fileData;
     }
 
 

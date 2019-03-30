@@ -52,13 +52,12 @@ public class BackupChunk implements Runnable {
 
             System.out.println("CONTEI: " + perceivedRepDeg + " de " + chunk.getReplicationDegree());
 
-            Peer.getMCListener().dumpHashmap();
 
             if(perceivedRepDeg < chunk.getReplicationDegree()) {
                 attempt++;
 
                 if(attempt > 4) {
-                    System.out.println("The Desired Replication Degree wasn't reached, skipping chunk...");
+                    System.out.println("The Desired Replication Degree wasn't reached in 5 tries, skipping chunk...");
                     repDegReached = true;
                     return;
 

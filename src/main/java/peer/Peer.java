@@ -1,8 +1,10 @@
 package main.java.peer;
 
 
+import main.java.database.Database;
 import main.java.listeners.Listener;
 import main.java.protocols.Backup;
+import main.java.protocols.Restore;
 import main.java.service.RMI;
 
 import java.io.IOException;
@@ -52,6 +54,8 @@ public class Peer implements RMI {
 
     private static InetAddress ip;
 
+    private static volatile Database db;
+
     /*
 
         javac -cp /Users/zemiguel/IdeaProjects/SDIS-P1/src/ peer/Peer.java
@@ -93,7 +97,8 @@ public class Peer implements RMI {
         MDBChannel = new Listener(MDBAddress, MDBPort);
         MDRChannel = new Listener(MDRAddress, MDRPort);
 
-
+        db = new Database();
+        saveDBToDisk();
 
 
         System.out.println("Start Listening on MC Channel...");
@@ -109,6 +114,41 @@ public class Peer implements RMI {
 
 
 
+    }
+
+    public static void saveDBToDisk() {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream("dbs.data");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("Database does not exist!");
+            createDB();
+            System.out.println("New DB created and saved to disk...");
+        }
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(fos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert oos != null;
+            oos.writeObject(db);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void createDB() {
+        db = new Database();
+        saveDBToDisk();
     }
 
 
@@ -197,11 +237,11 @@ public class Peer implements RMI {
     }
 
 
-    //TODO
-    /*public static null getDb() {
 
+    public static Database getDb() {
+        return db;
 
-    }*/
+    }
 
     public static Listener getMCListener() {
         return MCChannel;
@@ -237,6 +277,16 @@ public class Peer implements RMI {
 
     @Override
     public void restore(File file) throws RemoteException {
+
+        Thread t = new Thread(new Restore(file));
+        t.start();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
 
     }
 

@@ -1,6 +1,7 @@
 package main.java.listeners;
 
 
+import main.java.file.FileChunk;
 import main.java.file.FileChunkID;
 import main.java.peer.Peer;
 import main.java.service.PacketHandler;
@@ -20,6 +21,7 @@ public class Listener implements Runnable {
     public InetAddress address;
     public int port;
 
+    public volatile ConcurrentHashMap<String, ArrayList<FileChunk>> chunksReceived;
 
     private ConcurrentHashMap<FileChunkID, ArrayList<String>> storedChunks;
 
@@ -27,11 +29,12 @@ public class Listener implements Runnable {
 
 
 
-    public Listener(InetAddress address, int port) {
-        this.address = address;
-        this.port = port;
-        this.storedChunks = new ConcurrentHashMap<>();
-        this.putChunks = new ConcurrentHashMap<>();
+    public Listener(InetAddress addr, int prt) {
+        address = addr;
+        port = prt;
+        storedChunks = new ConcurrentHashMap<>();
+        putChunks = new ConcurrentHashMap<>();
+        chunksReceived = new ConcurrentHashMap<>();
 
     }
 
@@ -158,4 +161,36 @@ public class Listener implements Runnable {
             return false;
         }
     }
+
+
+
+    /*
+        MDR
+     */
+    public synchronized void queueChunk(FileChunk chunk) {
+        System.out.println("CHUNK TO MERGE: " + chunk.getFileID().toString());
+        ArrayList<FileChunk> fileChunks = chunksReceived.get(chunk.getFileID().toString());
+        fileChunks.add(chunk);
+        System.out.println("File Chunks :" + fileChunks);
+
+        //chunksReceived.get(chunk.getFileID().toString()).add(chunk);
+        printChunksReceived();
+        notifyAll();
+    }
+
+    public synchronized ArrayList<FileChunk> retrieveChunk(String fileID) {
+        ArrayList<FileChunk> receivedChunks = chunksReceived.get(fileID);
+
+        return receivedChunks;
+    }
+
+    public void printChunksReceived() {
+        for (String name: chunksReceived.keySet()){
+
+            String value = chunksReceived.get(name).toString();
+            System.out.println(name + " " + value);
+        }
+    }
+
+
 }
