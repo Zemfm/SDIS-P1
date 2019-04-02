@@ -166,13 +166,15 @@ public class PacketHandler implements Runnable {
     private void CHUNKHandler() {
 
 
+        if(Peer.restoring){
+            FileChunk chunk = new FileChunk(-1, chunkNo, fileID, packet_body);
 
-        FileChunk chunk = new FileChunk(-1, chunkNo, fileID, packet_body);
 
+            Peer.getMDRListener().queueChunk(chunk);
+            //System.out.println("\t CHUNKS RECEIVED : ");
+            //Peer.getMDRListener().printChunksReceived();
+        }
 
-        Peer.getMDRListener().queueChunk(chunk);
-        //System.out.println("\t CHUNKS RECEIVED : ");
-        //Peer.getMDRListener().printChunksReceived();
 
     }
 

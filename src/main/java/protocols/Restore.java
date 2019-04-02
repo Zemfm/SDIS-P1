@@ -30,7 +30,7 @@ public class Restore implements Runnable {
         String filename = new FileID(file.getName()).toString();
 
 
-
+        Peer.restoring = true;
 
         //TODO: SAVE BACKED UP FILES TO DB: ON ALL PEERS?
 
@@ -133,6 +133,9 @@ public class Restore implements Runnable {
         } else {
             System.out.println("\t The file you are trying to restore does not exist. Confirm if it was backed up");
         }
+
+
+        Peer.restoring = true;
 
 
 

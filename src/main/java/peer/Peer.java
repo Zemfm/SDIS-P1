@@ -56,6 +56,8 @@ public class Peer implements RMI {
 
     private static volatile Database db;
 
+    public static boolean restoring;
+
     /*
 
         javac -cp /Users/zemiguel/IdeaProjects/SDIS-P1/src/ peer/Peer.java
@@ -99,6 +101,8 @@ public class Peer implements RMI {
 
         db = new Database();
         saveDBToDisk();
+
+        restoring = false;
 
 
         System.out.println("Start Listening on MC Channel...");
