@@ -32,6 +32,9 @@ public class PacketHandler implements Runnable {
 
     private InetAddress senderIP;
 
+    private boolean listeningChunk;
+    private boolean receivedChunk;
+
 
     public PacketHandler(DatagramPacket packetToHandle) {
         this.packetToHandle = packetToHandle;
@@ -39,6 +42,8 @@ public class PacketHandler implements Runnable {
         packet_body = null;
         header_splitted = null;
         senderIP = packetToHandle.getAddress();
+        listeningChunk = false;
+        receivedChunk = false;
     }
 
     @Override
@@ -154,6 +159,8 @@ public class PacketHandler implements Runnable {
     private void parseCHUNK() {
 
         //CHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF><Body>
+        if(listeningChunk)
+            receivedChunk=true;
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
@@ -249,18 +256,17 @@ public class PacketHandler implements Runnable {
          */
 
         try { //TODO: DO NOT SEND IF I RECEIVE A CHUNK MESSAGE DURING THIS
+            listeningChunk = true;
             Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        Broker.sendCHUNK(chunk, chunkID);
+        if(!receivedChunk)
+            Broker.sendCHUNK(chunk, chunkID);
 
-
-
-
-
-
+        receivedChunk = false;
+        listeningChunk = false;
 
 
     }
