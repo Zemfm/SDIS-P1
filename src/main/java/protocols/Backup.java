@@ -103,14 +103,7 @@ public class Backup implements Runnable{
 
 
 
-
-        //TODO
-        //FileID fileID = new FileID(file.getName());
-
-        Peer.getDb().insertFile(file.getName(), fileID);
-        //String s = Peer.getDb().printStoredFiles();
-
-        //System.out.println("\t STORED FILES: " + s + "\n");
+        Peer.getDb().insertFile(fileID);
 
 
 

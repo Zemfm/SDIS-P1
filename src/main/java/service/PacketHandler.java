@@ -11,7 +11,9 @@ import main.java.utils.Constants.*;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static main.java.utils.Constants.*;
 import static main.java.utils.Utilities.getLocalAddress;
@@ -34,6 +36,7 @@ public class PacketHandler implements Runnable {
 
     private boolean listeningChunk;
     private boolean receivedChunk;
+    private boolean badMessage;
 
 
     public PacketHandler(DatagramPacket packetToHandle) {
@@ -44,6 +47,7 @@ public class PacketHandler implements Runnable {
         senderIP = packetToHandle.getAddress();
         listeningChunk = false;
         receivedChunk = false;
+        badMessage = false;
     }
 
     @Override
@@ -58,11 +62,7 @@ public class PacketHandler implements Runnable {
         switch (subprotocol) {
             case PUTCHUNK:
                 parsePUTCHUNK();
-                try {
-                    PUTCHUNKHandler();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                PUTCHUNKHandler();
                 break;
             case STORED:
                 parseSTORED();
@@ -85,10 +85,16 @@ public class PacketHandler implements Runnable {
                 REMOVEDHandler();
                 break;
 
-                default: System.out.println("Unknown protocol. Ignoring message...");
+                default: System.out.println("Unknown protocol. Ignoring message... " + subprotocol);
+                badMessage = true;
                 break;
 
         }
+
+        if(!badMessage)
+            System.out.println("\t Sender ID: " + packetToHandle.getAddress() + " \n" +
+                    "\t PEER ID : " + senderID + "\n");
+
 
     }
 
@@ -109,6 +115,9 @@ public class PacketHandler implements Runnable {
 
     private void parseREMOVED() {
 
+
+
+
     }
 
     private void REMOVEDHandler() {
@@ -126,6 +135,11 @@ public class PacketHandler implements Runnable {
     }
 
     private void parseDELETE() {
+
+
+        protocolVersion = Float.parseFloat(header_splitted[1]);
+        senderID = Integer.parseInt(header_splitted[2]);
+        fileID = new FileID(header_splitted[3]);
 
     }
 
@@ -153,6 +167,36 @@ public class PacketHandler implements Runnable {
              de cada DELETE msg que iniciou)
 
          */
+
+
+
+
+
+
+        final File folder = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString().split("\\.")[0]+
+                "/");
+        final File[] files = folder.listFiles( new FilenameFilter() {
+            @Override
+            public boolean accept( final File dir,
+                                   final String name ) {
+                return name.matches( fileID + "-.*" );
+            }
+        } );
+        for ( final File file : files ) {
+            if ( !file.delete() ) {
+                System.err.println( "Can't remove " + file.getAbsolutePath() );
+            }
+            else {
+                Peer.getDb().removeChunkInfo(new FileChunkID(fileID.toString(),
+                        Integer.parseInt(file.getName().split("-")[1])));
+
+                Peer.getDb().removeFile(fileID);
+            }
+        }
+
+
+
+
 
     }
 
@@ -223,7 +267,7 @@ public class PacketHandler implements Runnable {
 
         FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
         FileInputStream is = null;
-        File chunkFile = new File("Chunks/" + chunkID);
+        File chunkFile = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString().split("\\.")[0]+ "/" + chunkID);
         try {
             is  = new FileInputStream(chunkFile);
         } catch (FileNotFoundException e) {
@@ -255,7 +299,7 @@ public class PacketHandler implements Runnable {
 
          */
 
-        try { //TODO: DO NOT SEND IF I RECEIVE A CHUNK MESSAGE DURING THIS
+        try {
             listeningChunk = true;
             Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
         } catch (InterruptedException e) {
@@ -300,34 +344,42 @@ public class PacketHandler implements Runnable {
 
     }
 
-    private void PUTCHUNKHandler() throws IOException {
+    private void PUTCHUNKHandler() {
 
         parseBody();
 
-        File dir = new File("Chunks/");
-        boolean test = false;
+        File dir = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString().split("\\.")[0]+ "/");
+
+        System.out.println("\n\n\t\tDIR: " + dir.getPath()+"\n\n");
+
+
 
         if(!dir.exists()){
 
             System.out.println("creating directory: " + dir.getName());
 
             try{
-                dir.mkdir();
+                dir.mkdirs();
             }
             catch(SecurityException se){
                 se.printStackTrace();
             }
 
         }
-        packet_body = Arrays.copyOfRange(packetToHandle.getData(), bodyStartingIndex, packetToHandle.getLength());
-        FileID fileID = new FileID(header_splitted[3]);
-        String fileName = fileID.toString();
-        FileChunkID chunkID = new FileChunkID(fileName, Integer.parseInt(header_splitted[4]));
-        System.out.println("\t FILEID : " + fileName + "\n"
+
+        //TODO: REMOVE AND TEST
+
+        FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
+        System.out.println("\t FILEID : " + fileID.toString() + "\n"
                 + "\t CHUNK NO : " + chunkNo+ "\n");
-        System.out.println("\t PUT CHUNK " + header_splitted[3] + " with Replication Degree : " + replicationDegree  + " in " + "./Chunks");
-        System.out.println("Chunk ID: " + chunkID.toString());
-        File chunkfile = new File("Chunks/" + chunkID.toString());
+        System.out.println("\t PUT CHUNK: " + fileID.toString() + " with Replication Degree : " + replicationDegree  + " in " + dir.getPath());
+        System.out.println("\t Chunk ID: " + chunkID.toString());
+
+
+
+
+
+        File chunkfile = new File(dir.getPath()+"/"+ chunkID.toString());
 
 
 
@@ -344,13 +396,16 @@ public class PacketHandler implements Runnable {
 
 
             try {
-                FileOutputStream out = new FileOutputStream("Chunks/" + chunkID.toString());
-                System.out.println("Saving Chunk...");
+                FileOutputStream out = new FileOutputStream(dir.getPath()+"/" + chunkID.toString());
+                System.out.println("\n\t Saving Chunk...\n");
                 out.write(packet_body);
                 out.close();
 
+                Peer.getDb().insertFile(fileID);
+                Peer.getDb().insertChunkInfo(fileID, replicationDegree, chunkNo, Peer.getID());
+
                 try{
-                    System.out.println("Sending STORED response");
+                    System.out.println("\tSending STORED response...");
                     Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
                 } catch (InterruptedException ie){
                     ie.printStackTrace();

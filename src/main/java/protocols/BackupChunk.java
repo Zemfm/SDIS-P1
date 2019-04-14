@@ -50,7 +50,7 @@ public class BackupChunk implements Runnable {
 
             int perceivedRepDeg = Peer.getMCListener().getCount(fileChunkID);
 
-            System.out.println("CONTEI: " + perceivedRepDeg + " de " + chunk.getReplicationDegree());
+            System.out.println("Replication degree count: " + perceivedRepDeg + "/" + chunk.getReplicationDegree());
 
 
             if(perceivedRepDeg < chunk.getReplicationDegree()) {

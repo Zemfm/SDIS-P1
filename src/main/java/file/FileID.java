@@ -21,6 +21,22 @@ public class FileID implements Serializable {
         String[] fileIDSplitted = fileID.split("/");
         return fileIDSplitted[fileIDSplitted.length - 1];
     }
+    @Override
+    public boolean equals(Object o) {
+
+
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof FileID)) {
+            return false;
+        }
+
+        FileID c = (FileID) o;
+
+        return fileID.equals(c.fileID);
+    }
 
     public void setNumChunks(int numChunks) {
         this.numChunks = numChunks;

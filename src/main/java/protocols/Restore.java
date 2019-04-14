@@ -27,115 +27,117 @@ public class Restore implements Runnable {
 
 
         /* TODO: SHA */
+        FileID fID = new FileID(file.getName());
         String filename = new FileID(file.getName()).toString();
 
 
         Peer.restoring = true;
 
-        //TODO: SAVE BACKED UP FILES TO DB: ON ALL PEERS?
 
 
+        System.out.println("\t Restoring file: " + filename + "\n");
+        Peer.getMDRListener().chunksReceived.put(filename, new ArrayList<>());
+        ArrayList<FileChunk> chunks = new ArrayList<>();
 
-        //Check if file was backed up already
-        if(Peer.getDb().isFileStored(filename)){
-            System.out.println("The file is stored in the database");
+        ArrayList<FileChunk> fileChunks;
 
-            System.out.println("\t Preparing to Restore the File: " + filename + "\n");
-            Peer.getMDRListener().chunksReceived.put(filename, new ArrayList<>());
-            ArrayList<FileChunk> chunks = new ArrayList<>();
-
-            ArrayList<FileChunk> fileChunks;
-
-            int fileParts = Peer.getDb().getNumChunksOfFile(filename);
+        int fileParts = Peer.getDb().getNumChunksOfFile(fID);
 
 
-            for (int i = 0; i < fileParts; i++) {
-
-                FileChunkID chunkID = new FileChunkID(filename, i);
+        System.out.println("NUM CHUNKS2: " + fileParts);
 
 
+        for (int i = 0; i < fileParts; i++) {
 
-                //send get chunk
-                Broker.sendGETCHUNK(chunkID);
-
-                //receive chunk
-                fileChunks = Peer.getMDRListener().chunksReceived.get(filename);
+            FileChunkID chunkID = new FileChunkID(filename, i);
 
 
-                FileChunk chunkAUX = fileChunks.isEmpty() ? null : Peer.getMDRListener().chunksReceived.get(filename).remove(0);
+            //send get chunk
+            Broker.sendGETCHUNK(chunkID);
 
-                while (chunkAUX == null) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            //receive chunk
+            fileChunks = Peer.getMDRListener().chunksReceived.get(filename);
 
-                    chunkAUX = fileChunks.isEmpty() ? null : Peer.getMDRListener().chunksReceived.get(filename).remove(0);
+
+            FileChunk chunkAUX = fileChunks.isEmpty() ? null : Peer.getMDRListener().chunksReceived.get(filename).remove(0);
+
+            while (chunkAUX == null) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
 
-                chunks.add(chunkAUX);
-
-
-                //System.out.println("DATABASE : ");
-                //Peer.getDb().printDatabase();
+                chunkAUX = fileChunks.isEmpty() ? null : Peer.getMDRListener().chunksReceived.get(filename).remove(0);
             }
 
+            chunks.add(chunkAUX);
 
 
+            //System.out.println("DATABASE : ");
+            //Peer.getDb().printDatabase();
 
-            for (int i = 0; i < fileParts; i++) {
-                FileChunk chunkTmp = null;
-                ArrayList<FileChunk> chunkAUX = null;
-                for(FileChunk chunk : chunks) {
-                    if(chunk.getChunkNo() == i) {
-                        chunkTmp = chunk;
-                        break;
-                    }
-                }
-
-                if(chunkTmp == null) {
-                    System.out.println("Missing chunk file!!");
-                } else {
-                    try {
-                        fileData = concatBytes(fileData, chunkTmp.getChunkData());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                File dir = new File("Restored/");
-
-                if(!dir.exists()) {
-                    dir.mkdir();
-                }
-
-                FileOutputStream out = null;
-                try {
-                    out = new FileOutputStream("Restored/" + filename);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    assert out != null;
-                    out.write(fileData);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-
-            }
-        } else {
-            System.out.println("\t The file you are trying to restore does not exist. Confirm if it was backed up");
         }
 
 
-        Peer.restoring = true;
+
+
+        for (int i = 0; i < fileParts; i++) {
+            FileChunk chunkTmp = null;
+            ArrayList<FileChunk> chunkAUX = null;
+            for(FileChunk chunk : chunks) {
+                if(chunk.getChunkNo() == i) {
+                    chunkTmp = chunk;
+                    break;
+                }
+            }
+
+            if(chunkTmp == null) {
+                System.out.println("Missing chunk file!!");
+            } else {
+                try {
+                    fileData = concatBytes(fileData, chunkTmp.getChunkData());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    }
+
+            }
+
+            File dir = new File("peer"+Peer.getID()+"/restored/");
+
+            if(!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream("peer"+Peer.getID()+"/restored/" + filename);
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+
+            }
+            try {
+                assert out != null;
+                out.write(fileData);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+
+            }
+            try {
+                out.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+
+            }
+
+
+        }
+
+
+        Peer.restoring = false;
 
 
 

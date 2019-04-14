@@ -8,6 +8,7 @@ import main.java.peer.Peer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Database implements Serializable {
@@ -15,78 +16,88 @@ public class Database implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    private volatile ConcurrentHashMap<FileChunkID, FileChunk> database;
 
-    private  ConcurrentHashMap<FileChunkID, ArrayList<String>> perceivedRepDeg;
-    private  ConcurrentHashMap<FileChunkID, Integer> desiredRepDeg;
+    private ConcurrentHashMap<FileChunkID, ArrayList<Integer>> perceivedRepDeg;
+    private ConcurrentHashMap<FileChunkID, Integer> desiredRepDeg;
+    private List<FileID> storedFiles;
 
-    private volatile ConcurrentHashMap<String, FileID> storedFiles;
 
     public Database() {
-        database = new ConcurrentHashMap<>();
-        storedFiles = new ConcurrentHashMap<>();
-        database = new ConcurrentHashMap<FileChunkID, FileChunk>();
-        perceivedRepDeg = new ConcurrentHashMap<FileChunkID, ArrayList<String>>();
+
+        storedFiles = new ArrayList<>();
+        perceivedRepDeg = new ConcurrentHashMap<FileChunkID, ArrayList<Integer>>();
         desiredRepDeg = new ConcurrentHashMap<FileChunkID, Integer>();
     }
 
 
 
 
-    public void insertChunk(FileID fileID, int replicationDegree, int chunkNo, byte[] chunkData) {
+    public void insertChunkInfo(FileID fileID, int replicationDegree, int chunkNo, int peerID) {
         FileChunkID id = new FileChunkID(fileID.toString(), chunkNo);
-        FileChunk chunk = new FileChunk(replicationDegree, chunkNo, fileID, chunkData);
-        database.put(id, chunk);
 
+        perceivedRepDeg.put(id, new ArrayList<>());
+        perceivedRepDeg.get(id).add(peerID);
+        desiredRepDeg.put(id, replicationDegree);
 
         Peer.saveDBToDisk();
 
     }
 
-    public void removeChunk(FileChunkID chunkID){
+    public void removeChunkInfo(FileChunkID chunkID){
         desiredRepDeg.remove(chunkID);
         perceivedRepDeg.remove(chunkID);
-        database.remove(chunkID);
         Peer.saveDBToDisk();
 
-    }
-
-    public boolean hasChunk(FileChunkID chunkID) {
-        return database.containsKey(chunkID);
-
-    }
-
-    public FileChunk getChunk(FileChunkID chunkID){
-        if(hasChunk(chunkID))
-            return database.get(chunkID);
-        else
-            return null;
     }
 
     public void printDatabase() {
-        for (FileChunkID name: database.keySet()){
+        System.out.println("printing db...");
 
-            String key =name.toString();
-            String value = database.get(name).toString();
-            System.out.println(key + " " + value);
+        if(!storedFiles.isEmpty())
+            System.out.println("Files I have backed up: ");
+
+        for (FileID fid: storedFiles){
+
+            String value = fid.toString();
+            System.out.println("\t" + value);
+
         }
         for (FileChunkID name: perceivedRepDeg.keySet()){
 
-            String key =name.toString();
-            String value = perceivedRepDeg.get(name).toString();
-            System.out.println(key + " " + value);
+            String key = name.toString();
+            int value = perceivedRepDeg.get(name).size();
+            System.out.println(key + " perceivedRepDeg: " + value);
         }
     }
 
-    public void insertFile(String fileName, FileID fileID) {
-        System.out.println("\t Inserting File ->" + fileName + " " + fileID + " in Stored Files Database \n");
-        storedFiles.put(fileName, fileID);
+    public void insertFile(FileID fileID) {
 
-        Peer.saveDBToDisk();
+        if(!storedFiles.contains(fileID)){
+            storedFiles.add(fileID);
+            Peer.saveDBToDisk();
+        }
+        else {
+            int i = storedFiles.indexOf(fileID);
+            storedFiles.get(i).setNumChunks(fileID.getNumChunks());
+        }
+
     }
 
-    public int getNumChunksOfFile(String fileName){
-        return storedFiles.get(fileName).getNumChunks();
+    public void removeFile(FileID fileID){
+        storedFiles.remove(fileID);
+
+        Peer.saveDBToDisk();
+
+
+    }
+
+    public int getNumChunksOfFile(FileID fID){
+        int index = storedFiles.indexOf(fID);
+        if(index!=-1)
+            return storedFiles.get(index).getNumChunks();
+        else
+            return -1;
+
     }
 
     public String printStoredFiles() {
@@ -94,22 +105,25 @@ public class Database implements Serializable {
                 storedFiles.toString() + "\n";
     }
 
-    public boolean isFileStored(String fileName) {
-        return storedFiles.containsKey(fileName);
+    public boolean isFileStored(FileID fID) {
+
+        return storedFiles.contains(fID);
     }
 
 
 
-    public ArrayList<FileChunkID> getFileChunksofFileID(FileID fileID) {
-        ArrayList<FileChunkID> chunksOfFile = new ArrayList<>();
-        System.out.println("DATABASE : ");
-        System.out.println(database);
+    public List<String> getFileChunksofFileID(FileID fileID) {
 
-        for(FileChunkID cid : database.keySet()) {
-            System.out.println("DATABASE : " + database.keySet());
-            System.out.println("CID: " + cid.getFileID());
-            if(cid.getFileID().equals(fileID.toString())) {
-                chunksOfFile.add(cid);
+
+        List<String> chunksOfFile = new ArrayList<>();
+
+        printDatabase();
+        for(FileID fid : storedFiles) {
+            if(fid.equals(fileID)) {
+
+                for (int i = 0; i < fid.getNumChunks(); i++){
+                    chunksOfFile.add(fid + "-" + i);
+                }
             }
 
         }
@@ -121,12 +135,13 @@ public class Database implements Serializable {
     public synchronized void addNewRepDegCounter(FileChunkID chunkID, Integer repDeg){
 
         if (!perceivedRepDeg.containsKey(chunkID)) {
+            //TODO: ADD OWN PEERD ID TO LIST??
             perceivedRepDeg.put(chunkID, new ArrayList<>());
         }
 
 
         if (!desiredRepDeg.containsKey(chunkID)) {
-            desiredRepDeg.put(chunkID, new Integer(repDeg));
+            desiredRepDeg.put(chunkID, repDeg);
         }
 
         System.out.println("SAVING DB");
@@ -138,7 +153,7 @@ public class Database implements Serializable {
         desiredRepDeg.remove(chunkID);
     }
 
-    public void increasePerseivedRepDeg(FileChunkID chunkID, String senderID){
+    public void increasePerceivedRepDeg(FileChunkID chunkID, int senderID){
 
         if(perceivedRepDeg.containsKey(chunkID)) {
 
@@ -151,7 +166,7 @@ public class Database implements Serializable {
         }
     }
 
-    public void decreasePerseivedRepDeg(FileChunkID chunkID, String senderID){
+    public void decreasePerseivedRepDeg(FileChunkID chunkID, int senderID){
         if(perceivedRepDeg.containsKey(chunkID)) {
 
             if (perceivedRepDeg.get(chunkID).contains(senderID)) {

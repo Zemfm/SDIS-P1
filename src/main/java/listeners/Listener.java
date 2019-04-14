@@ -75,8 +75,7 @@ public class Listener implements Runnable {
                 boolean debug = true;
                 if(debug ||!senderAddress.toString().equals(Peer.getAddress().toString())) {
 
-                    System.out.println("\t Sender ID: " + senderAddress.toString() + " \n" +
-                        "\t PEER ID : " + Peer.getID() + "\n");
+
 
 
                     t = new Thread(new PacketHandler(packet));

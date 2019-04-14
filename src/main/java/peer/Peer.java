@@ -2,8 +2,10 @@ package main.java.peer;
 
 
 import main.java.database.Database;
+import main.java.file.FileID;
 import main.java.listeners.Listener;
 import main.java.protocols.Backup;
+import main.java.protocols.Delete;
 import main.java.protocols.Restore;
 import main.java.service.RMI;
 
@@ -30,7 +32,6 @@ public class Peer implements RMI {
         it has stored and keep that count in non-volatile memory. This information can be useful
         if the peer runs out of disk space: in that event, the peer may try to free some space by
          evicting chunks whose actual replication degree is higher than the desired replication degree.
-
         R: peer needs a DB
      */
 
@@ -59,29 +60,18 @@ public class Peer implements RMI {
     public static boolean restoring;
 
     /*
-
         javac -cp /Users/zemiguel/IdeaProjects/SDIS-P1/src/ peer/Peer.java
         DENTRO DO /src/: rmiregistry &
         usage:
         protocol version,the server id, service access point, MC, MDB, MDR
         rmi init example:
-
         java -Djava.net.preferIPv4Stack=true -Djava.rmi.server.codebase=file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/
         main/java/service/ main/java/peer/Peer 1.0 0 192.168.0.1 224.0.0.0:8000 224.0.0.0:8001 224.0.0.0:8002
-
         1.0, 0, 192.168.0.1, 224.0.0.0:8000, 224.0.0.0:8001, 224.0.0.0:8002
-
         normal peer example:
         java peer.Peer 1.0 1 224.0.0.0:8000 224.0.0.0:8001 224.0.0.0:8002
     */
     public static void main(String[] args) throws IOException {
-
-
-
-        //this line is used in macOS
-        //-Djava.net.preferIPv4Stack=true works better
-        //System.setProperty("java.net.preferIPv4Stack", "true");
-
 
         if(!parseArgs(args)) {
             System.out.println("Bad arguments");
@@ -99,9 +89,7 @@ public class Peer implements RMI {
         MDBChannel = new Listener(MDBAddress, MDBPort);
         MDRChannel = new Listener(MDRAddress, MDRPort);
 
-        db = new Database();
-        saveDBToDisk();
-
+        loadDatabase();
         restoring = false;
 
 
@@ -153,6 +141,24 @@ public class Peer implements RMI {
     private static void createDB() {
         db = new Database();
         saveDBToDisk();
+    }
+
+    private static void loadDatabase() {
+        try {
+            FileInputStream fileInputStream = new FileInputStream("dbs.data");
+
+            ObjectInputStream objectInputStream = new ObjectInputStream(
+                    fileInputStream);
+            db = (Database) objectInputStream.readObject();
+            db.printDatabase();
+            objectInputStream.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("Database not found");
+
+            createDB();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -276,6 +282,15 @@ public class Peer implements RMI {
 
     @Override
     public void delete(String filePath) throws RemoteException {
+        Thread t = new Thread(new Delete(new FileID(filePath)));
+
+        t.start();
+
+        try {
+            t.join();
+        } catch (InterruptedException e){
+            e.printStackTrace();
+        }
 
     }
 
@@ -296,6 +311,22 @@ public class Peer implements RMI {
 
     @Override
     public String state() throws RemoteException {
+
+        /*
+            For each file whose backup it has initiated:
+                The file pathname
+                The backup service id of the file
+                The desired replication degree
+            For each chunk of the file:
+                Its id
+                Its perceived replication degree
+            For each chunk it stores:
+                Its id
+                Its size (in KBytes)
+                Its perceived replication degree
+         */
+
+        db.printDatabase();
         return null;
     }
 

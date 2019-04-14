@@ -84,9 +84,8 @@ public class Client {
                 e.printStackTrace();
             }
         } else if(subProtocol.equals("DELETE")) {
-            System.out.println("Intializing DELETE");
+            System.out.println("Initializing DELETE");
             parseDeleteArguments(args);
-            File fileToDelete = new File(filePath);
             try {
                 peer.delete(filePath);
             } catch (RemoteException e) {
@@ -100,7 +99,15 @@ public class Client {
 
             try {
                 peer.reclaim(amount);
-                System.out.println("\t Reclaim amount:  ");
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        else if(subProtocol.equals("STATE")){
+            System.out.println("Retrieving client state...");
+
+            try {
+                peer.state();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
