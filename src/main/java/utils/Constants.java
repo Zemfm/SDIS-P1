@@ -1,5 +1,7 @@
 package main.java.utils;
 
+import main.java.peer.Peer;
+
 public class Constants {
 
     public static final int CHUNK_MAX_SIZE = 64000;

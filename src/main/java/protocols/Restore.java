@@ -26,8 +26,9 @@ public class Restore implements Runnable {
         byte[] fileData = new byte[0];
 
 
-        /* TODO: SHA */
-        FileID fID = new FileID(file.getName(), -1);
+        String finalName = file.getName();
+
+        FileID fID = new FileID(sha256(file.getName()), -1);
         String filename = fID.toString();
 
 
@@ -44,7 +45,6 @@ public class Restore implements Runnable {
         int fileParts = Peer.getDb().getNumChunksOfFile(fID);
 
 
-        System.out.println("NUM CHUNKS2: " + fileParts);
 
 
         for (int i = 0; i < fileParts; i++) {
@@ -111,7 +111,7 @@ public class Restore implements Runnable {
 
             FileOutputStream out = null;
             try {
-                out = new FileOutputStream("peer"+Peer.getID()+"/restored/" + filename);
+                out = new FileOutputStream("peer"+Peer.getID()+"/restored/" + finalName);
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

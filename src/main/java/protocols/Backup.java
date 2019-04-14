@@ -65,8 +65,8 @@ public class Backup implements Runnable{
             }
 
 
-            /* TODO: SHA */
-            fileID = new FileID(file.getName(), repDeg);
+
+            fileID = new FileID(sha256(file.getName()), repDeg);
 
             fileID.setNumChunks(fileParts + 1);
 

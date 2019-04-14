@@ -66,31 +66,18 @@ public class Listener implements Runnable {
 
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 multicastSocket.receive(packet);
-                InetAddress senderAddress =  packet.getAddress();
-                int senderPort = packet.getPort();
 
 
-                /* Force this if statement true to run locally */
-                /* TODO: remove this line (for non-local runs) */
-                boolean debug = true;
-                if(debug ||!senderAddress.toString().equals(Peer.getAddress().toString())) {
+                t = new Thread(new PacketHandler(packet));
+                t.start();
 
-
-
-
-                    t = new Thread(new PacketHandler(packet));
-                    t.start();
-
-                    try {
-                        t.join();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                else {
-                    System.out.println("\n This is my message, ignoring...\n");
-                }
+
+
 
 
 
@@ -152,10 +139,27 @@ public class Listener implements Runnable {
                 System.out.println("Already counted this peer");
 
     }
+    public synchronized void startCountingPutChunks(FileChunkID chunkID) {
+        if (!putChunks.containsKey(chunkID))
+            putChunks.put(chunkID, new ArrayList<>());
+    }
 
-    public void countPutChunk(FileChunkID chunkID, String senderID) {
+    public synchronized void countPutChunk(FileChunkID chunkID, String senderID) {
+
+        if (putChunks.containsKey(chunkID))
+            if (!putChunks.get(chunkID).contains(senderID))
+                putChunks.get(chunkID).add(senderID);
 
     }
+
+    public synchronized int getCountPutChunks(FileChunkID chunkID) {
+        return putChunks.get(chunkID).size();
+    }
+
+    public synchronized void stopSavingPutChunks(FileChunkID chunkID) {
+        putChunks.remove(chunkID);
+    }
+
 
     public boolean isCounting(FileChunkID fileChunkID) {
         if(storedChunks.containsKey(fileChunkID))

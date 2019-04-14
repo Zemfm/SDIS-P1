@@ -59,9 +59,6 @@ public class Client {
 
 
 
-
-
-
         if(subProtocol.equals("BACKUP")) {
             System.out.println("Initializing Backup...");
             parseBackupArguments(args);
@@ -95,7 +92,7 @@ public class Client {
         }
         else if(subProtocol.equals("RECLAIM")) {
             System.out.println("Initializing Reclaim...");
-            parseReclaimArguments(args); //TODO
+            parseReclaimArguments(args);
 
             try {
                 peer.reclaim(amount);

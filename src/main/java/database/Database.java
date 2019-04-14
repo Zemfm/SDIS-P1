@@ -64,6 +64,7 @@ public class Database implements Serializable {
          */
 
 
+
         System.out.println("----------------------------------------------------");
 
         System.out.println("Printing Database Info...\n\n");
@@ -139,14 +140,6 @@ public class Database implements Serializable {
 
         }
 
-
-
-        for (FileChunkID name: perceivedRepDeg.keySet()){
-
-            String key = name.toString();
-            int value = perceivedRepDeg.get(name).size();
-            System.out.println(key + " perceivedRepDeg: " + value);
-        }
     }
 
     public synchronized void insertFile(FileID fileID) {
@@ -186,6 +179,7 @@ public class Database implements Serializable {
 
     public boolean isFileStored(FileID fID) {
 
+
         return storedFiles.contains(fID);
     }
 
@@ -214,7 +208,6 @@ public class Database implements Serializable {
     public synchronized void addNewRepDegCounter(FileChunkID chunkID, Integer repDeg){
 
         if (!perceivedRepDeg.containsKey(chunkID)) {
-            //TODO: ADD OWN PEERD ID TO LIST??
             perceivedRepDeg.put(chunkID, new ArrayList<>());
         }
 
@@ -239,19 +232,46 @@ public class Database implements Serializable {
             if (!perceivedRepDeg.get(chunkID).contains(senderID)) {
                 perceivedRepDeg.get(chunkID).add(senderID);
                 System.out.println("SAVING DB");
+                //dumpPerceived();
                 Peer.saveDBToDisk();
             }
 
+        }
+        else {
+            perceivedRepDeg.put(chunkID, new ArrayList<>());
+            perceivedRepDeg.get(chunkID).add(senderID);
         }
 
 
     }
 
+    public void dumpPerceived() {
+        System.out.println("DUMPING PERCEIVED!");
+        for (FileChunkID name: perceivedRepDeg.keySet()){
+
+            String key =name.toString();
+            String value = perceivedRepDeg.get(name).toString();
+            System.out.println(key + " " + value);
+
+        }
+
+    }
+
     public void decreasePerceivedRepDeg(FileChunkID chunkID, int senderID){
+
+
+
+
+
         if(perceivedRepDeg.containsKey(chunkID)) {
 
             if (perceivedRepDeg.get(chunkID).contains(senderID)) {
+                System.out.println("DECRESING FROM: " + perceivedRepDeg.get(chunkID).size());
                 perceivedRepDeg.get(chunkID).remove(senderID);
+                if(perceivedRepDeg.get(chunkID).size()==0)
+                    perceivedRepDeg.remove(chunkID);
+
+                System.out.println("DECRESING TO: " + perceivedRepDeg.get(chunkID).size());
                 System.out.println("SAVING DB");
                 Peer.saveDBToDisk();
             }
@@ -260,17 +280,25 @@ public class Database implements Serializable {
     }
 
     public int getPerceivedRepDeg(FileChunkID chunkID){
-        return perceivedRepDeg.get(chunkID).size();
+
+        //dumpPerceived();
+
+        if(perceivedRepDeg.containsKey(chunkID))
+            return perceivedRepDeg.get(chunkID).size();
+        else
+            return -1;
     }
 
     public Integer getDesiredRepDeg(FileChunkID chunkID){
-        return desiredRepDeg.get(chunkID);
+        if(desiredRepDeg.containsKey(chunkID))
+            return desiredRepDeg.get(chunkID);
+        else
+            return -1;
     }
 
 
     public synchronized FileChunkID getHighestPerceivedRepDegChunk() {
         FileChunkID best = null;
-
         for (FileChunkID chunkID : perceivedRepDeg.keySet()) {
             if (best == null || perceivedRepDeg.get(chunkID).size() > perceivedRepDeg.get(best).size())
                 best = chunkID;

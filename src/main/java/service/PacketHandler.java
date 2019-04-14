@@ -6,6 +6,8 @@ import main.java.file.FileChunkID;
 import main.java.file.FileID;
 import main.java.listeners.Broker;
 import main.java.peer.Peer;
+import main.java.protocols.Backup;
+import main.java.protocols.BackupChunk;
 import main.java.utils.Constants.*;
 
 import java.io.*;
@@ -17,6 +19,7 @@ import java.util.List;
 
 import static main.java.utils.Constants.*;
 import static main.java.utils.Utilities.getLocalAddress;
+import static main.java.utils.Utilities.sha256;
 
 public class PacketHandler implements Runnable {
 
@@ -53,47 +56,51 @@ public class PacketHandler implements Runnable {
     @Override
     public void run() {
 
-        /* TODO: should be boolean */
         parseSubProtocol();
         //parseHeader();
 
 
-        /* TODO: parse should be boolean */
-        switch (subprotocol) {
-            case PUTCHUNK:
-                parsePUTCHUNK();
-                PUTCHUNKHandler();
-                break;
-            case STORED:
-                parseSTORED();
-                STOREDHandler();
-                break;
-            case GETCHUNK:
-                parseGETCHUNK();
-                GETCHUNKHandler();
-                break;
-            case CHUNK:
-                parseCHUNK();
-                CHUNKHandler();
-                break;
-            case DELETE:
-                parseDELETE();
-                DELETEHandler();
-                break;
-            case REMOVED:
-                parseREMOVED();
-                REMOVEDHandler();
-                break;
+        if(Integer.parseInt(header_splitted[2]) != Peer.getID()){
+
+            switch (subprotocol) {
+                case PUTCHUNK:
+                    parsePUTCHUNK();
+                    PUTCHUNKHandler();
+                    break;
+                case STORED:
+                    parseSTORED();
+                    STOREDHandler();
+                    break;
+                case GETCHUNK:
+                    parseGETCHUNK();
+                    GETCHUNKHandler();
+                    break;
+                case CHUNK:
+                    parseCHUNK();
+                    CHUNKHandler();
+                    break;
+                case DELETE:
+                    parseDELETE();
+                    DELETEHandler();
+                    break;
+                case REMOVED:
+                    parseREMOVED();
+                    REMOVEDHandler();
+                    break;
 
                 default: System.out.println("Unknown protocol. Ignoring message... " + subprotocol);
-                badMessage = true;
-                break;
+                    badMessage = true;
+                    break;
+
+            }
+
+            if(!badMessage)
+                System.out.println("\t Sender ID: " + packetToHandle.getAddress() + " \n" +
+                        "\t PEER ID : " + senderID + "\n");
+
 
         }
 
-        if(!badMessage)
-            System.out.println("\t Sender ID: " + packetToHandle.getAddress() + " \n" +
-                    "\t PEER ID : " + senderID + "\n");
 
 
     }
@@ -115,6 +122,10 @@ public class PacketHandler implements Runnable {
 
     private void parseREMOVED() {
 
+        protocolVersion = Float.parseFloat(header_splitted[1]);
+        senderID = Integer.parseInt(header_splitted[2]);
+        fileID = new FileID(sha256(header_splitted[3]), -1);
+        chunkNo = Integer.parseInt(header_splitted[4]);
 
 
 
@@ -122,15 +133,64 @@ public class PacketHandler implements Runnable {
 
     private void REMOVEDHandler() {
 
-        /*
-        TODO:
-        Upon receiving this message, a peer that has a local copy of the chunk shall
-        update its local count of this chunk. If this count drops below the desired replication
-        degree of that chunk, it shall initiate the chunk backup subprotocol after a random delay
-         uniformly distributed between 0 and 400 ms. If during this delay, a peer receives a PUTCHUNK
-          message for the same file chunk, it should back off and restrain from starting yet another
-           backup subprotocol for that file chunk.
-         */
+
+        if(Peer.getDb().isFileStored(fileID)){
+            FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
+            Peer.getDb().decreasePerceivedRepDeg(chunkID , senderID);
+
+            System.out.println("HANDLER REMOVED: "+ Peer.getDb().getPerceivedRepDeg(chunkID) + "/" +
+                    Peer.getDb().getDesiredRepDeg(chunkID));
+
+
+            if(Peer.getDb().getPerceivedRepDeg(chunkID) < Peer.getDb().getDesiredRepDeg(chunkID)){
+                System.out.println("\tPerceived rep degree dropped below desired rep degree.");
+
+                Peer.getMCListener().startCountingPutChunks(chunkID);
+
+                try{
+                    System.out.println("\tWaiting for Putchunk messages...");
+                    Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
+                } catch (InterruptedException ie){
+                    ie.printStackTrace();
+                }
+
+                int putChunksReceived = Peer.getMCListener().getCountPutChunks(chunkID);
+
+                Peer.getMCListener().stopSavingPutChunks(chunkID);
+
+                if (putChunksReceived == 0){
+
+                    try {
+                        File cFile = new File("peer"+Peer.getID()+"/Backup/"+
+                                fileID.toString().split("\\.")[0]+ "/"+chunkID.toString());
+
+
+
+
+                        byte[] data = Backup.loadFileData(cFile);
+
+                        //FileChunk(int replicationDegree, int chunkNo, FileID fileID, byte[] chunkData)
+                        fileID = new FileID(fileID.toString(), Peer.getDb().getDesiredRepDeg(chunkID));
+                        FileChunk fChunk = new FileChunk(Peer.getDb().getDesiredRepDeg(chunkID), chunkNo,
+                                fileID, data);
+
+                        new Thread(new BackupChunk(fChunk)).start();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+
+
+            }
+
+        }
+
+
+
+
+
 
     }
 
@@ -139,7 +199,7 @@ public class PacketHandler implements Runnable {
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3], -1);
+        fileID = new FileID(sha256(header_splitted[3]), -1);
 
     }
 
@@ -173,13 +233,16 @@ public class PacketHandler implements Runnable {
 
 
 
-        final File folder = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString().split("\\.")[0]+
+        final File folder = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString()+
                 "/");
+
+        System.out.println("FOLDER: " + folder.getPath());
+
         final File[] files = folder.listFiles( new FilenameFilter() {
             @Override
             public boolean accept( final File dir,
                                    final String name ) {
-                return name.matches( fileID + "-.*" );
+                return name.matches( fileID.toString() + "-.*" );
             }
         } );
         for ( final File file : files ) {
@@ -366,7 +429,7 @@ public class PacketHandler implements Runnable {
 
         }
 
-        //TODO: REMOVE AND TEST
+
 
         FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
         System.out.println("\t FILEID : " + fileID.toString() + "\n"
@@ -384,7 +447,6 @@ public class PacketHandler implements Runnable {
 
 
 
-        /* TODO: not needed? */
         Peer.getMDBListener().countPutChunk(chunkID, String.valueOf(senderID));
 
         if(chunkfile.exists()) {

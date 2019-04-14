@@ -6,6 +6,7 @@ import main.java.file.FileID;
 import main.java.listeners.Listener;
 import main.java.protocols.Backup;
 import main.java.protocols.Delete;
+import main.java.protocols.Reclaim;
 import main.java.protocols.Restore;
 import main.java.service.RMI;
 
@@ -27,14 +28,6 @@ import static main.java.utils.Constants.*;
 public class Peer implements RMI {
 
 
-    /*
-        TODO:
-        A peer should also count the number of confirmation messages for each of the chunks
-        it has stored and keep that count in non-volatile memory. This information can be useful
-        if the peer runs out of disk space: in that event, the peer may try to free some space by
-         evicting chunks whose actual replication degree is higher than the desired replication degree.
-        R: peer needs a DB
-     */
 
 
     private static Listener MCChannel;  //MC CHANNEL
@@ -93,6 +86,9 @@ public class Peer implements RMI {
 
         loadDisk();
         loadDatabase();
+
+        db.printDatabase();
+        disk.printDisk();
         restoring = false;
 
 
@@ -243,7 +239,7 @@ public class Peer implements RMI {
     private static void launchRMI() {
 
         System.setProperty("java.rmi.server.hostname", "localhost");
-        //po meu mac
+        //po meu mac TODO REMOVE
         System.setProperty("rmi.server.codebase", "file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/main/java/service/bin/");
         try {
 
@@ -360,6 +356,7 @@ public class Peer implements RMI {
             e.printStackTrace();
         }
 
+
     }
 
     @Override
@@ -401,6 +398,17 @@ public class Peer implements RMI {
 
     @Override
     public void reclaim(int amount) throws RemoteException {
+
+        Thread t = new Thread(new Reclaim(amount));
+        t.start();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
 
     }
 
