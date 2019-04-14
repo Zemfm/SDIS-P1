@@ -144,8 +144,10 @@ public class Listener implements Runnable {
 
     public synchronized void countStored(FileChunkID chunkID, String senderID) {
         if (storedChunks.containsKey(chunkID))
-            if (!storedChunks.get(chunkID).contains(senderID))
+            if (!storedChunks.get(chunkID).contains(senderID)) {
                 storedChunks.get(chunkID).add(senderID);
+                Peer.getDb().increasePerceivedRepDeg(chunkID, Integer.parseInt(senderID));
+            }
             else
                 System.out.println("Already counted this peer");
 

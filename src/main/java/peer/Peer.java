@@ -22,6 +22,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static main.java.utils.Utilities.getLocalAddress;
+import static main.java.utils.Constants.*;
 
 public class Peer implements RMI {
 
@@ -56,6 +57,7 @@ public class Peer implements RMI {
     private static InetAddress ip;
 
     private static volatile Database db;
+    private static Disk disk;
 
     public static boolean restoring;
 
@@ -71,7 +73,7 @@ public class Peer implements RMI {
         normal peer example:
         java peer.Peer 1.0 1 224.0.0.0:8000 224.0.0.0:8001 224.0.0.0:8002
     */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
 
         if(!parseArgs(args)) {
             System.out.println("Bad arguments");
@@ -89,6 +91,7 @@ public class Peer implements RMI {
         MDBChannel = new Listener(MDBAddress, MDBPort);
         MDRChannel = new Listener(MDRAddress, MDRPort);
 
+        loadDisk();
         loadDatabase();
         restoring = false;
 
@@ -109,9 +112,24 @@ public class Peer implements RMI {
     }
 
     public static void saveDBToDisk() {
+
+        File dir = new File("peer"+getID()+"/database/");
+
+        if(!dir.exists()){
+            System.out.println("creating directory: " + dir.getName());
+
+            try{
+                dir.mkdirs();
+            }
+            catch(SecurityException se){
+                se.printStackTrace();
+            }
+
+        }
+
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream("dbs.data");
+            fos = new FileOutputStream("peer"+getID()+"/database/dbs.data");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             System.out.println("Database does not exist!");
@@ -144,13 +162,13 @@ public class Peer implements RMI {
     }
 
     private static void loadDatabase() {
+        System.out.println("Loading database...");
         try {
-            FileInputStream fileInputStream = new FileInputStream("dbs.data");
+            FileInputStream fileInputStream = new FileInputStream("peer"+getID()+"/database/dbs.data");
 
             ObjectInputStream objectInputStream = new ObjectInputStream(
                     fileInputStream);
             db = (Database) objectInputStream.readObject();
-            db.printDatabase();
             objectInputStream.close();
         } catch (FileNotFoundException e) {
             System.out.println("Database not found");
@@ -265,6 +283,70 @@ public class Peer implements RMI {
         return MDRChannel;
     }
 
+    public static void saveDisk(){
+        FileOutputStream fos = null;
+        File dir = new File("peer"+getID()+"/disk/");
+
+        if(!dir.exists()){
+            System.out.println("creating directory: " + dir.getName());
+
+            try{
+                dir.mkdirs();
+            }
+            catch(SecurityException se){
+                se.printStackTrace();
+            }
+
+        }
+
+        try {
+            fos = new FileOutputStream("peer"+getID()+"/disk/disk.data");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("Disk does not exist!");
+            createDisk();
+            System.out.println("New Disk created and saved to disk...");
+        }
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(fos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            oos.writeObject(disk);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void loadDisk() throws ClassNotFoundException, IOException {
+
+        System.out.println("Loading disk...");
+
+        try {
+            FileInputStream fileInputStream = new FileInputStream("peer"+getID()+"/disk/disk.data");
+
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            disk = (Disk) objectInputStream.readObject();
+            objectInputStream.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("Disk not found");
+            createDisk();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void createDisk(){
+        disk = new Disk();
+        saveDisk();
+    }
 
     @Override
     public void backup(File file, int replicationDegree) throws RemoteException {
@@ -282,7 +364,7 @@ public class Peer implements RMI {
 
     @Override
     public void delete(String filePath) throws RemoteException {
-        Thread t = new Thread(new Delete(new FileID(filePath)));
+        Thread t = new Thread(new Delete(new FileID(filePath, 0)));
 
         t.start();
 
@@ -312,21 +394,8 @@ public class Peer implements RMI {
     @Override
     public String state() throws RemoteException {
 
-        /*
-            For each file whose backup it has initiated:
-                The file pathname
-                The backup service id of the file
-                The desired replication degree
-            For each chunk of the file:
-                Its id
-                Its perceived replication degree
-            For each chunk it stores:
-                Its id
-                Its size (in KBytes)
-                Its perceived replication degree
-         */
-
         db.printDatabase();
+        disk.printDisk();
         return null;
     }
 
@@ -349,6 +418,8 @@ public class Peer implements RMI {
     public static float getProtocolVersion() {
         return protocolVersion;
     }
+
+    public static Disk getDisk(){ return disk; }
 
 
 }

@@ -24,7 +24,7 @@ public class BackupChunk implements Runnable {
         int attempt = 0;
 
         long timeToRetry = 500;
-        FileID fID = new FileID(chunk.getFileID().toString());
+        FileID fID = new FileID(chunk.getFileID().toString(),chunk.getReplicationDegree());
 
 
         FileChunkID fileChunkID = new FileChunkID(fID.toString(), chunk.getChunkNo());
@@ -32,6 +32,8 @@ public class BackupChunk implements Runnable {
 
 
         while(!repDegReached) {
+
+            Peer.getDb().addNewRepDegCounter(new FileChunkID(fID.toString(), chunk.getChunkNo()), chunk.getReplicationDegree());
 
             timeToRetry = timeToRetry *2;
 
@@ -74,6 +76,8 @@ public class BackupChunk implements Runnable {
             }
 
         }
+
+
 
 
 

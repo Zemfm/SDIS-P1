@@ -27,8 +27,8 @@ public class Restore implements Runnable {
 
 
         /* TODO: SHA */
-        FileID fID = new FileID(file.getName());
-        String filename = new FileID(file.getName()).toString();
+        FileID fID = new FileID(file.getName(), -1);
+        String filename = fID.toString();
 
 
         Peer.restoring = true;

@@ -8,11 +8,13 @@ public class FileID implements Serializable {
 
     private String fileID;
     private int numChunks;
+    private int desiredRepDeg;
 
 
-    public FileID(String fileID) {
+    public FileID(String fileID, int desiredRepDeg) {
         this.fileID = fileID;
         this.numChunks = -1;
+        this.desiredRepDeg = desiredRepDeg;
 
     }
 
@@ -44,5 +46,9 @@ public class FileID implements Serializable {
 
     public int getNumChunks() {
         return numChunks;
+    }
+
+    public int getDesiredRepDeg() {
+        return desiredRepDeg;
     }
 }

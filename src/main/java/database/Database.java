@@ -1,14 +1,16 @@
 package main.java.database;
 
 
-import main.java.file.FileChunk;
 import main.java.file.FileChunkID;
 import main.java.file.FileID;
 import main.java.peer.Peer;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Database implements Serializable {
@@ -32,7 +34,7 @@ public class Database implements Serializable {
 
 
 
-    public void insertChunkInfo(FileID fileID, int replicationDegree, int chunkNo, int peerID) {
+    public synchronized void insertChunkInfo(FileID fileID, int replicationDegree, int chunkNo, int peerID) {
         FileChunkID id = new FileChunkID(fileID.toString(), chunkNo);
 
         perceivedRepDeg.put(id, new ArrayList<>());
@@ -43,7 +45,7 @@ public class Database implements Serializable {
 
     }
 
-    public void removeChunkInfo(FileChunkID chunkID){
+    public synchronized void removeChunkInfo(FileChunkID chunkID){
         desiredRepDeg.remove(chunkID);
         perceivedRepDeg.remove(chunkID);
         Peer.saveDBToDisk();
@@ -51,17 +53,94 @@ public class Database implements Serializable {
     }
 
     public void printDatabase() {
-        System.out.println("printing db...");
+        /*
+        For each file whose backup it has initiated:
+                The file pathname
+                The backup service id of the file
+                The desired replication degree
+                    For each chunk of the file:
+                        Its id
+                        Its perceived replication degree
+         */
 
-        if(!storedFiles.isEmpty())
+
+        System.out.println("----------------------------------------------------");
+
+        System.out.println("Printing Database Info...\n\n");
+
+        if(!storedFiles.isEmpty()){
             System.out.println("Files I have backed up: ");
 
-        for (FileID fid: storedFiles){
 
-            String value = fid.toString();
-            System.out.println("\t" + value);
+
+            for (FileID fid: storedFiles){
+
+                if(fid.getNumChunks()!=-1){
+                    System.out.println("\t id: " + fid.toString());
+                    System.out.println("\t Desired rep degree: " + fid.getDesiredRepDeg());
+                    System.out.println("\t Chunks: ");
+
+                    Iterator<Map.Entry<FileChunkID, ArrayList<Integer>>> it = perceivedRepDeg.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry<FileChunkID, ArrayList<Integer>> pair = it.next();
+
+                        FileChunkID cID = pair.getKey();
+
+                        if(cID.getFileID().equals(fid.toString())){
+
+                            ArrayList<Integer> replications = pair.getValue();
+
+                            System.out.println("\t\t ChunkNo:" + cID.getChunkNumber()+ " Perceived Replication Degree:"
+                            + replications.size());
+                        }
+
+
+                        it.remove(); // avoids a ConcurrentModificationException
+                    }
+
+                }
+
+            }
+
+            System.out.println("----------------------------------------------------");
+            System.out.println("Chunks on my system: ");
+            for (FileID fid: storedFiles){
+
+                if(fid.getNumChunks()==-1){
+
+                    Iterator<Map.Entry<FileChunkID, ArrayList<Integer>>> it = perceivedRepDeg.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry<FileChunkID, ArrayList<Integer>> pair = it.next();
+
+                        FileChunkID cID = pair.getKey();
+
+                        if(cID.getFileID().equals(fid.toString())){
+
+                            ArrayList<Integer> replications = pair.getValue();
+
+                            File f = new File("peer"+Peer.getID()+"/Backup/"+fid.toString().split("\\.")[0]+
+                                    "/"+cID.toString());
+
+                            System.out.println("\t\t ChunkNo:" + cID.getChunkNumber()+ " Perceived Replication Degree:"
+                                    + replications.size() + " Size:"+ f.length());
+                        }
+
+
+                        it.remove(); // avoids a ConcurrentModificationException
+                    }
+
+                }
+
+            }
+
+            System.out.println("----------------------------------------------------");
+
+
 
         }
+
+
+
         for (FileChunkID name: perceivedRepDeg.keySet()){
 
             String key = name.toString();
@@ -70,7 +149,7 @@ public class Database implements Serializable {
         }
     }
 
-    public void insertFile(FileID fileID) {
+    public synchronized void insertFile(FileID fileID) {
 
         if(!storedFiles.contains(fileID)){
             storedFiles.add(fileID);
@@ -83,7 +162,7 @@ public class Database implements Serializable {
 
     }
 
-    public void removeFile(FileID fileID){
+    public synchronized void removeFile(FileID fileID){
         storedFiles.remove(fileID);
 
         Peer.saveDBToDisk();
@@ -91,7 +170,7 @@ public class Database implements Serializable {
 
     }
 
-    public int getNumChunksOfFile(FileID fID){
+    public synchronized int getNumChunksOfFile(FileID fID){
         int index = storedFiles.indexOf(fID);
         if(index!=-1)
             return storedFiles.get(index).getNumChunks();
@@ -153,7 +232,7 @@ public class Database implements Serializable {
         desiredRepDeg.remove(chunkID);
     }
 
-    public void increasePerceivedRepDeg(FileChunkID chunkID, int senderID){
+    public synchronized void increasePerceivedRepDeg(FileChunkID chunkID, int senderID){
 
         if(perceivedRepDeg.containsKey(chunkID)) {
 
@@ -164,9 +243,11 @@ public class Database implements Serializable {
             }
 
         }
+
+
     }
 
-    public void decreasePerseivedRepDeg(FileChunkID chunkID, int senderID){
+    public void decreasePerceivedRepDeg(FileChunkID chunkID, int senderID){
         if(perceivedRepDeg.containsKey(chunkID)) {
 
             if (perceivedRepDeg.get(chunkID).contains(senderID)) {

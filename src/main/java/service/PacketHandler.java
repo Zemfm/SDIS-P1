@@ -139,7 +139,7 @@ public class PacketHandler implements Runnable {
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3]);
+        fileID = new FileID(header_splitted[3], -1);
 
     }
 
@@ -187,6 +187,7 @@ public class PacketHandler implements Runnable {
                 System.err.println( "Can't remove " + file.getAbsolutePath() );
             }
             else {
+                Peer.getDisk().removeFile(file.length());
                 Peer.getDb().removeChunkInfo(new FileChunkID(fileID.toString(),
                         Integer.parseInt(file.getName().split("-")[1])));
 
@@ -208,7 +209,7 @@ public class PacketHandler implements Runnable {
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3]);
+        fileID = new FileID(header_splitted[3], -1);
         chunkNo = Integer.parseInt(header_splitted[4]);
         parseBody();
 
@@ -235,7 +236,7 @@ public class PacketHandler implements Runnable {
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3]);
+        fileID = new FileID(header_splitted[3], -1);
         chunkNo = Integer.parseInt(header_splitted[4]);
 
 
@@ -320,7 +321,7 @@ public class PacketHandler implements Runnable {
 
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3]);
+        fileID = new FileID(header_splitted[3], -1);
         chunkNo = Integer.parseInt(header_splitted[4]);
 
     }
@@ -329,6 +330,7 @@ public class PacketHandler implements Runnable {
 
         FileChunkID fcID = new FileChunkID(fileID.toString(), chunkNo);
         Peer.getMCListener().countStored(fcID, String.valueOf(senderID));
+        Peer.getDb().increasePerceivedRepDeg(new FileChunkID(fileID.toString(), chunkNo), senderID);
 
     }
 
@@ -339,20 +341,17 @@ public class PacketHandler implements Runnable {
         replicationDegree = Integer.parseInt(header_splitted[5]);
         protocolVersion = Float.parseFloat(header_splitted[1]);
         senderID = Integer.parseInt(header_splitted[2]);
-        fileID = new FileID(header_splitted[3]);
+        fileID = new FileID(header_splitted[3], replicationDegree);
         chunkNo = Integer.parseInt(header_splitted[4]);
+        parseBody();
 
     }
 
     private void PUTCHUNKHandler() {
 
-        parseBody();
+
 
         File dir = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString().split("\\.")[0]+ "/");
-
-        System.out.println("\n\n\t\tDIR: " + dir.getPath()+"\n\n");
-
-
 
         if(!dir.exists()){
 
@@ -393,29 +392,31 @@ public class PacketHandler implements Runnable {
             Broker.sendSTORED(chunkID);
         } else {
 
+            if (Peer.getDisk().saveFile(packet_body.length)){
 
+                try {
+                    FileOutputStream out = new FileOutputStream(dir.getPath()+"/" + chunkID.toString());
+                    System.out.println("\n\t Saving Chunk...\n");
+                    out.write(packet_body);
+                    out.close();
 
-            try {
-                FileOutputStream out = new FileOutputStream(dir.getPath()+"/" + chunkID.toString());
-                System.out.println("\n\t Saving Chunk...\n");
-                out.write(packet_body);
-                out.close();
+                    Peer.getDb().insertFile(fileID);
+                    Peer.getDb().insertChunkInfo(fileID, replicationDegree, chunkNo, Peer.getID());
 
-                Peer.getDb().insertFile(fileID);
-                Peer.getDb().insertChunkInfo(fileID, replicationDegree, chunkNo, Peer.getID());
+                    try{
+                        System.out.println("\tSending STORED response...");
+                        Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
+                    } catch (InterruptedException ie){
+                        ie.printStackTrace();
+                    }
 
-                try{
-                    System.out.println("\tSending STORED response...");
-                    Thread.sleep((long)(Math.random() * MAX_WAITING_TIME));
-                } catch (InterruptedException ie){
-                    ie.printStackTrace();
-                }
-
-                Broker.sendSTORED(chunkID);
+                    Broker.sendSTORED(chunkID);
 
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+            }
 
 
         }
