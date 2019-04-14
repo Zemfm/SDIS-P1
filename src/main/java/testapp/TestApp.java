@@ -1,22 +1,18 @@
-package main.java.client;
+package main.java.testapp;
 
 import main.java.service.RMI;
 
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.regex.Pattern;
 
-import static main.java.utils.Constants.*;
-import static main.java.utils.Utilities.*;
 import static main.java.utils.Utilities.validateAccessPoint;
 
 //TODO: RENAME TO TestApp
-public class Client {
+public class TestApp {
 
 
     public static String AP;
@@ -101,7 +97,7 @@ public class Client {
             }
         }
         else if(subProtocol.equals("STATE")){
-            System.out.println("Retrieving client state...");
+            System.out.println("Retrieving testapp state...");
 
             try {
                 peer.state();
@@ -139,7 +135,7 @@ public class Client {
             replicationDegree = Integer.parseInt(args[3]);
         }
 
-        System.out.println("\t \t \t Client Arguments\n\n" +
+        System.out.println("\t \t \t TestApp Arguments\n\n" +
                 "\t Access Point: " + AP + "\n" +
                 "\t Sub Protocol : " + subProtocol + "\n" +
                 "\t File Path: " + filePath + "\n" + "\n" +
@@ -158,7 +154,7 @@ public class Client {
 
         }
 
-        System.out.println("\t \t \t \t Client Arguments\n\n" +
+        System.out.println("\t \t \t \t TestApp Arguments\n\n" +
                 "\t Access Point: " + AP + "\n" +
                 "\t Sub Protocol : " + subProtocol + "\n" +
                 "\t File Path: " + filePath + "\n" + "\n");
@@ -176,7 +172,7 @@ public class Client {
 
         }
 
-        System.out.println("\t \t \t \t Client Arguments\n\n" +
+        System.out.println("\t \t \t \t TestApp Arguments\n\n" +
                 "\t Access Point: " + AP + "\n" +
                 "\t Sub Protocol : " + subProtocol + "\n" +
                 "\t Amount: " + amount + "\n" + "\n" );

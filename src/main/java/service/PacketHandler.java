@@ -205,32 +205,6 @@ public class PacketHandler implements Runnable {
 
     private void DELETEHandler() {
 
-        /*
-
-            Enhancement: If a peer that backs up some chunks of the file is not running at the time
-            the initiator peer sends a DELETE message for that file, the space used by these chunks
-            will never be reclaimed. Can you think of a change to the protocol, possibly including
-            additional messages, that would allow to reclaim storage space even in that event?
-
-            Os peers respondem quando fazem delete, o initiator peer diminui o repdegree, se chegar a 0
-            todos os peers que tinham esse chunk apagaram. Se nao chegar a 0, é pq há um peer offline
-            que não apagou. Nesse caso, guardar numa hash, o chunkID e repDegree.
-            Quando um peer se liga, pergunta no broadcast se existem chunks por apagar, se alguém responder,
-            procurar na pasta chunk pelo chunk, ao encontrar, apaga e o initiator peer que avisou que havia
-            um chunk por apagar, diminui o rep degree, se chegar a 0 apaga esse valor da hash.
-
-            OU: (pior, mas mais simples)
-            Quando um peer inicia, verificar se tem chunks na pasta /chunks, se tiver, enviar uma mensagem
-            DELETEENH para o MC (por cada chunk, esperando por respostas depois de cada envio)
-            a perguntar se o chunk foi apagado, se receber uma resposta, apaga esse chunk.
-             O(s) peer(s) precisariam de guardar um historico de DELETES. (talvez cada peer ter um historico
-             de cada DELETE msg que iniciou)
-
-         */
-
-
-
-
 
 
         final File folder = new File("peer"+Peer.getID()+"/Backup/"+fileID.toString()+
@@ -307,27 +281,6 @@ public class PacketHandler implements Runnable {
 
     private void GETCHUNKHandler() {
 
-
-        /*
-        Enhancement: If chunks are large, this protocol may not be desirable: only one peer
-        needs to receive the chunk, but we are using a multicast channel for sending the chunk.
-        Can you think of a change to the protocol that would eliminate this problem, and yet interoperate
-         with non-initiator peers that implement the protocol described in this section? Your enhancement
-          must use TCP to get full credit.
-
-
-        Esta msg "CHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF><Body>"
-        passa a ser "CHUNKENH <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF>",
-        depois liga-se por TCP ao ipeer e envia o chunk?
-        Para ligar por TCP:
-        O initiator peer que comecou o protocolo de restore, abre um servidor TCP,
-        depois na msg GETCHUNK <Version> <SenderId> <FileId> <ChunkNo> <CRLF><CRLF>
-        envia a port onde os peers se devem ligar para enviar o chunk.
-        O ip pode ser descoberto quando um peer recebe a msg GETCHUNK (senderIP = packetToHandle.getAddress();).
-
-        ex TCP: https://www.pegaxchange.com/2017/12/07/simple-tcp-ip-server-client-java/
-
-         */
 
         FileChunkID chunkID = new FileChunkID(fileID.toString(), chunkNo);
         FileInputStream is = null;
@@ -489,11 +442,6 @@ public class PacketHandler implements Runnable {
 
     }
 
-    /**
-     * In this function we parse the Message Body which contains the Chunk Data. However, we don't know in which position the body starts
-     * to parse the body we need to know the total length of the header lines, the number of lines and the total size occupied by CRLF
-     * This way , when we sum the totalHeaderLinesLength with NumLines*CRLF.length we get the starting index of the body
-     */
     private void parseBody() {
 
         ByteArrayInputStream stream = new ByteArrayInputStream(packetToHandle.getData());

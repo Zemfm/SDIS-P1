@@ -238,9 +238,9 @@ public class Peer implements RMI {
 
     private static void launchRMI() {
 
-        System.setProperty("java.rmi.server.hostname", "localhost");
-        //po meu mac TODO REMOVE
-        System.setProperty("rmi.server.codebase", "file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/main/java/service/bin/");
+        //System.setProperty("java.rmi.server.hostname", "localhost");
+
+        //System.setProperty("rmi.server.codebase", "file:/Users/zemiguel/IdeaProjects/SDIS-P1/src/main/java/service/bin/");
         try {
 
 
